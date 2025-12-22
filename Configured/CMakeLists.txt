@@ -14,12 +14,17 @@ qt_add_executable(Configured
 
   src/ui/HomeScreenWidget.hpp
   src/ui/HomeScreenWidget.cpp
+  src/ui/BottomTextButton.hpp
+  src/ui/BottomTextButton.cpp
 
 )
 
 qt_add_resources(Configured app_icons
   FILES
-
+  resources/icons/usb_connection_96.png
+  resources/icons/add_plus_circle_128.png
+  resources/icons/settings_cog_128.png
+  resources/icons/question_mark_circle_128.png
 )
 
 target_link_libraries(Configured PRIVATE Qt6::Widgets)
