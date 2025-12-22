@@ -16,6 +16,9 @@ qt_add_executable(Configured
   src/ui/HomeScreenWidget.cpp
   src/ui/BottomTextButton.hpp
   src/ui/BottomTextButton.cpp
+  src/ui/ConnectWindow.hpp
+  src/ui/ConnectWindow.cpp
+  src/ui/ConnectionType.hpp
 
 )
 

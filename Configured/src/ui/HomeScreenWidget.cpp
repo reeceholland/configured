@@ -7,6 +7,10 @@
 #include <QVBoxLayout>
 #include <QIcon>
 #include <QSize>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QDir>
 
 #include "ui/BottomTextButton.hpp"
 
@@ -75,4 +79,30 @@ HomeScreenWidget::HomeScreenWidget(QWidget* parent)
       QPushButton[cta="true"]:pressed { background: #1a5fd1; }
     )");
 	
+	connect(connectBtn, &QPushButton::clicked, this, &HomeScreenWidget::connectClicked);
 }
+
+void HomeScreenWidget::connectClicked()
+{
+    if (!connectWindow_)
+    {
+        connectWindow_ = new ConnectWindow(nullptr);          // top-level window
+        connectWindow_->setAttribute(Qt::WA_DeleteOnClose);   // deletes on close
+
+        // when it deletes itself, clear our pointer
+        connect(connectWindow_, &QObject::destroyed, this, [this]() {
+            connectWindow_ = nullptr;
+            });
+
+        connectWindow_->show();
+    }
+    else
+    {
+        connectWindow_->show();
+        connectWindow_->raise();
+        connectWindow_->activateWindow();
+    }
+}
+
+
+
