@@ -1,8 +1,34 @@
-﻿cmake_minimum_required(VERSION 3.24)
-
+﻿cmake_minimum_required(VERSION 3.21)
 project(Configured LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory("Configured")
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
+
+add_executable(Configured
+    src/main.cpp
+
+    src/app/MainWindow.cpp
+    include/app/MainWindow.hpp
+
+    src/ui/HomeScreenWidget.cpp
+    include/ui/HomeScreenWidget.hpp
+
+    src/ui/EditorScreenWidget.cpp
+    include/ui/EditorScreenWidget.hpp
+)
+
+target_include_directories(Configured PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(Configured PRIVATE
+    Qt6::Widgets
+    Qt6::Core
+    Qt6::Gui
+)
