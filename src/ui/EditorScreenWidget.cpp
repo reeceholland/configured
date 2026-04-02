@@ -351,6 +351,16 @@ void EditorScreenWidget::applyEditorToSelectedItem()
     }
 }
 
+void EditorScreenWidget::setProjectName(const QString &name)
+{
+    if (!project_)
+    {
+        return;
+    }
+
+    project_->setName(name);
+}
+
 QString EditorScreenWidget::typeToString(ConfiguredItemType type) const
 {
     switch (type)

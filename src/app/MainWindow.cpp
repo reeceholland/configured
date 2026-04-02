@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QStackedWidget>
 #include <QToolBar>
+#include <QInputDialog>
 
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/EditorScreenWidget.hpp"
@@ -32,16 +33,9 @@ MainWindow::MainWindow()
   toolbar->setMovable(false);
 
   // Add actions to the toolbar
-  newProjectAction_ = toolbar->addAction("New Project");
   saveProjectAction_ = toolbar->addAction("Save Project");
   addChildAction_ = toolbar->addAction("Add Child");
   removeItemAction_ = toolbar->addAction("Remove Selected");
-
-  //
-  connect(newProjectAction_, &QAction::triggered, this, [this]()
-          {
-        editor_->createNewProject();
-        showEditor(); });
 
   connect(saveProjectAction_, &QAction::triggered, this, [this]()
           {
@@ -68,8 +62,16 @@ MainWindow::MainWindow()
 
   connect(home_, &HomeScreenWidget::createNewProjectRequested, this, [this]()
           {
-        editor_->createNewProject();
-        showEditor(); });
+            bool ok = false;
+            QString name = QInputDialog::getText(this, "New Project", "Enter project name:", QLineEdit::Normal, "Untitled Project", &ok);
+
+            if (!ok || name.trimmed().isEmpty())
+            {
+              return;
+            } 
+            editor_->createNewProject();
+            showEditor();
+            editor_->setProjectName(name); });
 
   connect(home_, &HomeScreenWidget::openProjectRequested, this, [this]()
           {

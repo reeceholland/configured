@@ -25,6 +25,7 @@ public:
     void addChildToSelected();
     void removeSelectedItem();
 
+    void setProjectName(const QString &name);
     bool saveProject(const QString &filePath) const;
     bool loadProject(const QString &filePath);
 
