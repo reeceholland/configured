@@ -12,8 +12,10 @@ public:
     explicit HomeScreenWidget(QWidget *parent = nullptr);
 
 signals:
-    void createRequested();
+    void createNewProjectRequested();
+    void openProjectRequested();
 
 private:
-    QPushButton *createBtn_ = nullptr;
+    QPushButton *createNewProjectBtn_ = nullptr;
+    QPushButton *openProjectBtn_ = nullptr;
 };

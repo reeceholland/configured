@@ -21,13 +21,18 @@ HomeScreenWidget::HomeScreenWidget(QWidget *parent)
     auto *subtitle = new QLabel("Robotics Configuration Studio", this);
     subtitle->setAlignment(Qt::AlignCenter);
 
-    createBtn_ = new QPushButton("New Project", this);
-    createBtn_->setFixedSize(200, 40);
+    createNewProjectBtn_ = new QPushButton("New Project", this);
+    createNewProjectBtn_->setFixedSize(200, 40);
+
+    openProjectBtn_ = new QPushButton("Open Project", this);
+    openProjectBtn_->setFixedSize(200, 40);
 
     layout->addWidget(title);
     layout->addWidget(subtitle);
     layout->addSpacing(20);
-    layout->addWidget(createBtn_, 0, Qt::AlignCenter);
+    layout->addWidget(createNewProjectBtn_, 0, Qt::AlignCenter);
+    layout->addWidget(openProjectBtn_, 0, Qt::AlignCenter);
 
-    connect(createBtn_, &QPushButton::clicked, this, &HomeScreenWidget::createRequested);
+    connect(createNewProjectBtn_, &QPushButton::clicked, this, &HomeScreenWidget::createNewProjectRequested);
+    connect(openProjectBtn_, &QPushButton::clicked, this, &HomeScreenWidget::openProjectRequested);
 }

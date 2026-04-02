@@ -21,6 +21,12 @@ add_executable(Configured
 
     src/ui/EditorScreenWidget.cpp
     include/ui/EditorScreenWidget.hpp
+
+    src/core/ConfiguredItem.cpp
+    include/core/ConfiguredItem.hpp
+
+    src/core/ConfiguredProject.cpp
+    include/core/ConfiguredProject.hpp
 )
 
 target_include_directories(Configured PRIVATE
