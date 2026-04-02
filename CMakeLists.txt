@@ -27,6 +27,8 @@ add_executable(Configured
 
     src/core/ConfiguredProject.cpp
     include/core/ConfiguredProject.hpp
+
+    resources/app.qrc
 )
 
 target_include_directories(Configured PRIVATE

@@ -14,7 +14,7 @@ MainWindow::MainWindow()
 {
   // Set up the main window
   setWindowTitle("CONFIGURED");
-  resize(1200, 800);
+  resize(800, 400);
 
   // Create the stacked widget to hold the home and editor screens
   stack_ = new QStackedWidget(this);

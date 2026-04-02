@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QPixmap>
 
 class QPushButton;
 
@@ -15,7 +16,11 @@ signals:
     void createNewProjectRequested();
     void openProjectRequested();
 
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
 private:
     QPushButton *createNewProjectBtn_ = nullptr;
     QPushButton *openProjectBtn_ = nullptr;
+    QPixmap background_;
 };
