@@ -62,7 +62,12 @@ MainWindow::MainWindow()
           { editor_->removeSelectedItem(); });
 
   connect(goHomeAction_, &QAction::triggered, this, [this]()
-          { showHome(); });
+          { 
+            QMessageBox::StandardButton reply = QMessageBox::question(this, "Go Home", "Are you sure you want to return to the home screen? Unsaved changes will be lost.", QMessageBox::Yes | QMessageBox::No);
+            if (reply == QMessageBox::Yes) 
+            {
+              showHome(); 
+            } });
 
   connect(home_, &HomeScreenWidget::createNewProjectRequested, this, [this]()
           {
