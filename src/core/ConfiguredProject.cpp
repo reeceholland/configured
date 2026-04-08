@@ -5,6 +5,45 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
+
+static bool collectParameterKeys(const ConfiguredItem *item,
+                                 QSet<QString> &seen,
+                                 QString *duplicate)
+{
+    if (!item)
+    {
+        return false;
+    }
+
+    if (item->isParameter())
+    {
+        const QString key = item->parameterKey().trimmed();
+
+        if (!key.isEmpty())
+        {
+            if (seen.contains(key))
+            {
+                if (duplicate)
+                {
+                    *duplicate = key;
+                }
+                return true;
+            }
+            seen.insert(key);
+        }
+    }
+
+    for (const auto &child : item->children())
+    {
+        if (collectParameterKeys(child.get(), seen, duplicate))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 ConfiguredProject::ConfiguredProject()
     : name_("Untitled Project"),
@@ -237,4 +276,10 @@ std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObjec
     }
 
     return item;
+}
+
+bool ConfiguredProject::hasDuplicateParameterKeys(QString *duplicateKey) const
+{
+    QSet<QString> seen;
+    return collectParameterKeys(root_.get(), seen, duplicateKey);
 }

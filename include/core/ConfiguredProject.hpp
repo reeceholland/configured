@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <memory>
+#include <QSet>
 
 class QJsonObject;
 class ConfiguredItem;
@@ -21,6 +22,8 @@ public:
 
     bool saveToFile(const QString &filePath) const;
     bool loadFromFile(const QString &filePath);
+
+    bool hasDuplicateParameterKeys(QString *duplicateKey = nullptr) const;
 
 private:
     QString name_;

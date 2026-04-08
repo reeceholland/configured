@@ -6,8 +6,10 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QSplitter>
 #include <QTextEdit>
+#include <QToolTip>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
@@ -137,6 +139,14 @@ bool EditorScreenWidget::saveProject(const QString &filePath) const
 {
     if (!project_)
     {
+        return false;
+    }
+
+    QString duplicate;
+    if (project_->hasDuplicateParameterKeys(&duplicate))
+    {
+        QMessageBox::warning(nullptr, "Save Failed",
+                             QString("Cannot save project. Duplicate parameter key: '%1'").arg(duplicate));
         return false;
     }
 
@@ -340,6 +350,19 @@ void EditorScreenWidget::applyEditorToSelectedItem()
         selectedItem_->setParameterValue("");
         selectedItem_->setParameterUnit("");
         selectedItem_->setRequired(false);
+    }
+
+    QString duplicate;
+    if (project_ && project_->hasDuplicateParameterKeys(&duplicate))
+    {
+        parameterKeyEdit_->setStyleSheet("border: 2px solid red;");
+        QToolTip::showText(parameterKeyEdit_->mapToGlobal(QPoint(0, parameterKeyEdit_->height())),
+                           QString("Duplicate parameter key: '%1'").arg(duplicate),
+                           parameterKeyEdit_);
+    }
+    else
+    {
+        parameterKeyEdit_->setStyleSheet("");
     }
 
     parameterPanel_->setVisible(selectedItem_->isParameter());
