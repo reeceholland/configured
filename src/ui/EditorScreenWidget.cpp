@@ -150,6 +150,13 @@ bool EditorScreenWidget::saveProject(const QString &filePath) const
         return false;
     }
 
+    if (requiredCheck_->isChecked() && (parameterKeyEdit_->text().trimmed().isEmpty() || parameterValueEdit_->text().trimmed().isEmpty()))
+    {
+        QMessageBox::warning(nullptr, "Save Failed",
+                             QString("Cannot save project. Required parameters must have a key and value."));
+        return false;
+    }
+
     return project_->saveToFile(filePath);
 }
 
@@ -365,7 +372,7 @@ void EditorScreenWidget::applyEditorToSelectedItem()
         parameterKeyEdit_->setStyleSheet("");
     }
 
-    parameterPanel_->setVisible(selectedItem_->isParameter());
+        parameterPanel_->setVisible(selectedItem_->isParameter());
 
     auto *currentTreeItem = tree_->currentItem();
     if (currentTreeItem)
