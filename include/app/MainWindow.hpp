@@ -25,7 +25,10 @@ private:
     HomeScreenWidget *home_ = nullptr;
     EditorScreenWidget *editor_ = nullptr;
 
+    QToolBar *toolbar_ = nullptr;
+
     QAction *saveProjectAction_ = nullptr;
     QAction *addChildAction_ = nullptr;
     QAction *removeItemAction_ = nullptr;
+    QAction *goHomeAction_ = nullptr;
 };

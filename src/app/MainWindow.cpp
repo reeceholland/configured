@@ -29,13 +29,14 @@ MainWindow::MainWindow()
   stack_->addWidget(editor_);
 
   // Create the toolbar
-  auto *toolbar = addToolBar("Main");
-  toolbar->setMovable(false);
+  toolbar_ = addToolBar("Main");
+  toolbar_->setMovable(false);
 
   // Add actions to the toolbar
-  saveProjectAction_ = toolbar->addAction("Save Project");
-  addChildAction_ = toolbar->addAction("Add Child");
-  removeItemAction_ = toolbar->addAction("Remove Selected");
+  saveProjectAction_ = toolbar_->addAction("Save Project");
+  addChildAction_ = toolbar_->addAction("Add Child");
+  removeItemAction_ = toolbar_->addAction("Remove Selected");
+  goHomeAction_ = toolbar_->addAction("Home");
 
   connect(saveProjectAction_, &QAction::triggered, this, [this]()
           {
@@ -59,6 +60,9 @@ MainWindow::MainWindow()
 
   connect(removeItemAction_, &QAction::triggered, this, [this]()
           { editor_->removeSelectedItem(); });
+
+  connect(goHomeAction_, &QAction::triggered, this, [this]()
+          { showHome(); });
 
   connect(home_, &HomeScreenWidget::createNewProjectRequested, this, [this]()
           {
@@ -100,12 +104,20 @@ MainWindow::MainWindow()
 void MainWindow::showHome()
 {
   stack_->setCurrentWidget(home_);
+  if (toolbar_)
+  {
+    toolbar_->setVisible(false);
+  }
   setEditorActionsEnabled(false);
 }
 
 void MainWindow::showEditor()
 {
   stack_->setCurrentWidget(editor_);
+  if (toolbar_)
+  {
+    toolbar_->setVisible(true);
+  }
   setEditorActionsEnabled(true);
 }
 
