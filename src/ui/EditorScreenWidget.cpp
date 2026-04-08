@@ -372,7 +372,7 @@ void EditorScreenWidget::applyEditorToSelectedItem()
         parameterKeyEdit_->setStyleSheet("");
     }
 
-        parameterPanel_->setVisible(selectedItem_->isParameter());
+    parameterPanel_->setVisible(selectedItem_->isParameter());
 
     auto *currentTreeItem = tree_->currentItem();
     if (currentTreeItem)
@@ -423,4 +423,14 @@ ConfiguredItemType EditorScreenWidget::stringToType(const QString &text) const
         return ConfiguredItemType::Parameter;
     }
     return ConfiguredItemType::Component;
+}
+
+ConfiguredProject *EditorScreenWidget::project()
+{
+    return project_.get();
+}
+
+const ConfiguredProject *EditorScreenWidget::project() const
+{
+    return project_.get();
 }

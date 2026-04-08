@@ -9,6 +9,8 @@
 
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/EditorScreenWidget.hpp"
+#include "ui/ProjectMetadataDialog.hpp"
+#include "core/ConfiguredProject.hpp"
 
 MainWindow::MainWindow()
 {
@@ -37,7 +39,7 @@ MainWindow::MainWindow()
   addChildAction_ = toolbar_->addAction("Add Child");
   removeItemAction_ = toolbar_->addAction("Remove Selected");
   goHomeAction_ = toolbar_->addAction("Home");
-
+  projectMetadataAction_ = toolbar_->addAction("Project Metadata");
   connect(saveProjectAction_, &QAction::triggered, this, [this]()
           {
         const QString filePath = QFileDialog::getSaveFileName(
@@ -67,6 +69,19 @@ MainWindow::MainWindow()
             if (reply == QMessageBox::Yes) 
             {
               showHome(); 
+            } });
+
+  connect(projectMetadataAction_, &QAction::triggered, this, [this]()
+          {
+            if(!editor_ || !editor_->project())
+            {
+              return;
+            }
+
+            ProjectMetadataDialog dialog(editor_->project(), this);
+            if(dialog.exec() == QDialog::Accepted)
+            {
+              updateWindowTitle();
             } });
 
   connect(home_, &HomeScreenWidget::createNewProjectRequested, this, [this]()
@@ -142,4 +157,19 @@ void MainWindow::setEditorActionsEnabled(bool enabled)
   {
     removeItemAction_->setEnabled(enabled);
   }
+}
+
+void MainWindow::updateWindowTitle()
+{
+  if (editor_ && editor_->project())
+  {
+    const QString name = editor_->project()->name().trimmed();
+    if (!name.isEmpty())
+    {
+      setWindowTitle("CONFIGURED - " + name);
+      return;
+    }
+  }
+
+  setWindowTitle("CONFIGURED");
 }

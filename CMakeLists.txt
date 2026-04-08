@@ -28,6 +28,9 @@ add_executable(Configured
     src/core/ConfiguredProject.cpp
     include/core/ConfiguredProject.hpp
 
+    src/ui/ProjectMetadataDialog.cpp
+    include/ui/ProjectMetadataDialog.hpp
+
     resources/app.qrc
 )
 

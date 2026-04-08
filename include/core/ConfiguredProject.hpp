@@ -15,6 +15,21 @@ public:
     const QString &name() const;
     void setName(const QString &name);
 
+    const QString &description() const;
+    void setDescription(const QString &description);
+
+    const QString &author() const;
+    void setAuthor(const QString &author);
+
+    const QString &company() const;
+    void setCompany(const QString &company);
+
+    const QString &version() const;
+    void setVersion(const QString &version);
+
+    const QString &robotPlatform() const;
+    void setRobotPlatform(const QString &platform);
+
     ConfiguredItem *root();
     const ConfiguredItem *root() const;
 
@@ -27,6 +42,11 @@ public:
 
 private:
     QString name_;
+    QString description_;
+    QString author_;
+    QString company_;
+    QString version_;
+    QString robot_platform_;
     std::unique_ptr<ConfiguredItem> root_;
 
     QJsonObject itemToJson(const ConfiguredItem *item) const;

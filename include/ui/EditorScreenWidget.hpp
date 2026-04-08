@@ -29,6 +29,9 @@ public:
     bool saveProject(const QString &filePath) const;
     bool loadProject(const QString &filePath);
 
+    ConfiguredProject *project();
+    const ConfiguredProject *project() const;
+
 private:
     QTreeWidget *tree_ = nullptr;
 

@@ -18,6 +18,8 @@ private:
     void showHome();
     void showEditor();
     void setEditorActionsEnabled(bool enabled);
+    void updateWindowTitle();
+    void promptAndCreateProject();
 
 private:
     QStackedWidget *stack_ = nullptr;
@@ -31,4 +33,5 @@ private:
     QAction *addChildAction_ = nullptr;
     QAction *removeItemAction_ = nullptr;
     QAction *goHomeAction_ = nullptr;
+    QAction *projectMetadataAction_ = nullptr;
 };

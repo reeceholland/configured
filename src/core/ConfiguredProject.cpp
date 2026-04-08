@@ -47,6 +47,11 @@ static bool collectParameterKeys(const ConfiguredItem *item,
 
 ConfiguredProject::ConfiguredProject()
     : name_("Untitled Project"),
+      description_(""),
+      author_(""),
+      company_(""),
+      version_(""),
+      robot_platform_(""),
       root_(std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot))
 {
 }
@@ -59,6 +64,56 @@ const QString &ConfiguredProject::name() const
 void ConfiguredProject::setName(const QString &name)
 {
     name_ = name;
+}
+
+const QString &ConfiguredProject::description() const
+{
+    return description_;
+}
+
+void ConfiguredProject::setDescription(const QString &description)
+{
+    description_ = description;
+}
+
+const QString &ConfiguredProject::author() const
+{
+    return author_;
+}
+
+void ConfiguredProject::setAuthor(const QString &author)
+{
+    author_ = author;
+}
+
+const QString &ConfiguredProject::company() const
+{
+    return company_;
+}
+
+void ConfiguredProject::setCompany(const QString &company)
+{
+    company_ = company;
+}
+
+const QString &ConfiguredProject::version() const
+{
+    return version_;
+}
+
+void ConfiguredProject::setVersion(const QString &version)
+{
+    version_ = version;
+}
+
+const QString &ConfiguredProject::robotPlatform() const
+{
+    return robot_platform_;
+}
+
+void ConfiguredProject::setRobotPlatform(const QString &platform)
+{
+    robot_platform_ = platform;
 }
 
 ConfiguredItem *ConfiguredProject::root()
@@ -74,6 +129,11 @@ const ConfiguredItem *ConfiguredProject::root() const
 void ConfiguredProject::createSampleProject()
 {
     name_ = "Untitled Project";
+    description_ = "";
+    author_ = "";
+    company_ = "";
+    version_ = "";
+    robot_platform_ = "";
 
     root_ = std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot);
     root_->setDescription("Top-level robot configuration.");
@@ -140,6 +200,11 @@ bool ConfiguredProject::saveToFile(const QString &filePath) const
 
     QJsonObject rootObj;
     rootObj["projectName"] = name_;
+    rootObj["description"] = description_;
+    rootObj["author"] = author_;
+    rootObj["company"] = company_;
+    rootObj["version"] = version_;
+    rootObj["robotPlatform"] = robot_platform_;
     rootObj["root"] = itemToJson(root_.get());
 
     QJsonDocument doc(rootObj);
@@ -178,6 +243,11 @@ bool ConfiguredProject::loadFromFile(const QString &filePath)
     }
 
     name_ = obj["projectName"].toString("Untitled Project");
+    description_ = obj["description"].toString();
+    author_ = obj["author"].toString();
+    company_ = obj["company"].toString();
+    version_ = obj["version"].toString();
+    robot_platform_ = obj["robotPlatform"].toString();
 
     const QJsonObject rootObj = obj["root"].toObject();
     auto newRoot = itemFromJson(rootObj);
