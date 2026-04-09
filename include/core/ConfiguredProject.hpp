@@ -30,6 +30,9 @@ public:
     const QString &robotPlatform() const;
     void setRobotPlatform(const QString &platform);
 
+    bool isGitManaged() const;
+    void setGitManaged(bool managed);
+
     ConfiguredItem *root();
     const ConfiguredItem *root() const;
 
@@ -47,6 +50,7 @@ private:
     QString company_;
     QString version_;
     QString robot_platform_;
+    bool git_managed_ = false;
     std::unique_ptr<ConfiguredItem> root_;
 
     QJsonObject itemToJson(const ConfiguredItem *item) const;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QCheckBox>
 
 class QLineEdit;
 class QTextEdit;
@@ -24,4 +25,5 @@ private:
     QLineEdit *companyEdit_ = nullptr;
     QLineEdit *versionEdit_ = nullptr;
     QLineEdit *robotPlatformEdit_ = nullptr;
+    QCheckBox *gitManagedCheck_ = nullptr;
 };

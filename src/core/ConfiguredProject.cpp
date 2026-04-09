@@ -116,6 +116,16 @@ void ConfiguredProject::setRobotPlatform(const QString &platform)
     robot_platform_ = platform;
 }
 
+bool ConfiguredProject::isGitManaged() const
+{
+    return git_managed_;
+}
+
+void ConfiguredProject::setGitManaged(bool managed)
+{
+    git_managed_ = managed;
+}
+
 ConfiguredItem *ConfiguredProject::root()
 {
     return root_.get();
@@ -134,6 +144,7 @@ void ConfiguredProject::createSampleProject()
     company_ = "";
     version_ = "";
     robot_platform_ = "";
+    git_managed_ = false;
 
     root_ = std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot);
     root_->setDescription("Top-level robot configuration.");
@@ -205,6 +216,7 @@ bool ConfiguredProject::saveToFile(const QString &filePath) const
     rootObj["company"] = company_;
     rootObj["version"] = version_;
     rootObj["robotPlatform"] = robot_platform_;
+    rootObj["gitManaged"] = git_managed_;
     rootObj["root"] = itemToJson(root_.get());
 
     QJsonDocument doc(rootObj);
@@ -248,7 +260,7 @@ bool ConfiguredProject::loadFromFile(const QString &filePath)
     company_ = obj["company"].toString();
     version_ = obj["version"].toString();
     robot_platform_ = obj["robotPlatform"].toString();
-
+    git_managed_ = obj["gitManaged"].toBool();
     const QJsonObject rootObj = obj["root"].toObject();
     auto newRoot = itemFromJson(rootObj);
     if (!newRoot)
