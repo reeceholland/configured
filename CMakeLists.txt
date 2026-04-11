@@ -31,6 +31,12 @@ add_executable(Configured
     src/ui/ProjectMetadataDialog.cpp
     include/ui/ProjectMetadataDialog.hpp
 
+    src/core/GitService.cpp
+    include/core/GitService.hpp
+
+    src/ui/GitConfigDialog.cpp
+    include/ui/GitConfigDialog.hpp
+
     resources/app.qrc
 )
 

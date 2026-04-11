@@ -26,8 +26,11 @@ public:
     void removeSelectedItem();
 
     void setProjectName(const QString &name);
-    bool saveProject(const QString &filePath) const;
+    bool saveProject(const QString &filePath);
     bool loadProject(const QString &filePath);
+
+    QString currentFilePath() const;
+    bool hasProjectFilePath() const;
 
     ConfiguredProject *project();
     const ConfiguredProject *project() const;
@@ -44,6 +47,8 @@ private:
     QLineEdit *parameterValueEdit_ = nullptr;
     QLineEdit *parameterUnitEdit_ = nullptr;
     QCheckBox *requiredCheck_ = nullptr;
+
+    QString currentFilePath_;
 
     std::unique_ptr<ConfiguredProject> project_;
     ConfiguredItem *selectedItem_ = nullptr;
