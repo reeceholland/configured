@@ -27,6 +27,9 @@ public:
     const QString &version() const;
     void setVersion(const QString &version);
 
+    const QString &lastModified() const;
+    void setLastModified(const QString &lastModified);
+
     const QString &robotPlatform() const;
     void setRobotPlatform(const QString &platform);
 
@@ -49,6 +52,7 @@ private:
     QString author_;
     QString company_;
     QString version_;
+    QString last_modified_;
     QString robot_platform_;
     bool git_managed_ = false;
     std::unique_ptr<ConfiguredItem> root_;

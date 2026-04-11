@@ -106,6 +106,16 @@ void ConfiguredProject::setVersion(const QString &version)
     version_ = version;
 }
 
+const QString &ConfiguredProject::lastModified() const
+{
+    return last_modified_;
+}
+
+void ConfiguredProject::setLastModified(const QString &lastModified)
+{
+    last_modified_ = lastModified;
+}
+
 const QString &ConfiguredProject::robotPlatform() const
 {
     return robot_platform_;
@@ -144,6 +154,7 @@ void ConfiguredProject::createSampleProject()
     company_ = "";
     version_ = "";
     robot_platform_ = "";
+    last_modified_ = QDateTime::currentDateTime().toString(Qt::ISODate);
     git_managed_ = false;
 
     root_ = std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot);
@@ -215,6 +226,7 @@ bool ConfiguredProject::saveToFile(const QString &filePath) const
     rootObj["author"] = author_;
     rootObj["company"] = company_;
     rootObj["version"] = version_;
+    rootObj["lastModified"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     rootObj["robotPlatform"] = robot_platform_;
     rootObj["gitManaged"] = git_managed_;
     rootObj["root"] = itemToJson(root_.get());
@@ -259,6 +271,7 @@ bool ConfiguredProject::loadFromFile(const QString &filePath)
     author_ = obj["author"].toString();
     company_ = obj["company"].toString();
     version_ = obj["version"].toString();
+    last_modified_ = obj["lastModified"].toString();
     robot_platform_ = obj["robotPlatform"].toString();
     git_managed_ = obj["gitManaged"].toBool();
     const QJsonObject rootObj = obj["root"].toObject();

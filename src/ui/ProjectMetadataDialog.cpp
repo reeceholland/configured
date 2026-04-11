@@ -24,6 +24,7 @@ ProjectMetadataDialog::ProjectMetadataDialog(ConfiguredProject *project, QWidget
     authorEdit_ = new QLineEdit(this);
     companyEdit_ = new QLineEdit(this);
     versionEdit_ = new QLineEdit(this);
+    lastModifiedLabel_ = new QLabel(this);
     robotPlatformEdit_ = new QLineEdit(this);
     gitManagedCheck_ = new QCheckBox("Git Managed Configuration", this);
 
@@ -32,6 +33,7 @@ ProjectMetadataDialog::ProjectMetadataDialog(ConfiguredProject *project, QWidget
     form->addRow("Author:", authorEdit_);
     form->addRow("Company:", companyEdit_);
     form->addRow("Version:", versionEdit_);
+    form->addRow("Last Modified:", lastModifiedLabel_);
     form->addRow("Robot Platform:", robotPlatformEdit_);
     form->addRow("", gitManagedCheck_);
 
@@ -66,6 +68,7 @@ void ProjectMetadataDialog::loadFromProject()
     versionEdit_->setText(project_->version());
     robotPlatformEdit_->setText(project_->robotPlatform());
     gitManagedCheck_->setChecked(project_->isGitManaged());
+    lastModifiedLabel_->setText(project_->lastModified());
 }
 
 void ProjectMetadataDialog::applyToProject()

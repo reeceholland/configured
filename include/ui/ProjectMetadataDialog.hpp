@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <QCheckBox>
+#include <qlabel.h>
 
 class QLineEdit;
 class QTextEdit;
@@ -24,6 +25,7 @@ private:
     QLineEdit *authorEdit_ = nullptr;
     QLineEdit *companyEdit_ = nullptr;
     QLineEdit *versionEdit_ = nullptr;
+    QLabel *lastModifiedLabel_ = nullptr;
     QLineEdit *robotPlatformEdit_ = nullptr;
     QCheckBox *gitManagedCheck_ = nullptr;
 };
