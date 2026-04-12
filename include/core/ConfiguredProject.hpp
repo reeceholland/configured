@@ -4,8 +4,9 @@
 #include <memory>
 #include <QSet>
 
+#include "core/ConfiguredItem.hpp"
+
 class QJsonObject;
-class ConfiguredItem;
 
 class ConfiguredProject
 {
@@ -46,6 +47,9 @@ public:
 
     bool hasDuplicateParameterKeys(QString *duplicateKey = nullptr) const;
 
+    const QString &gitCommitHash() const;
+    void setGitCommitHash(const QString &hash);
+
 private:
     QString name_;
     QString description_;
@@ -55,6 +59,7 @@ private:
     QString last_modified_;
     QString robot_platform_;
     bool git_managed_ = false;
+    QString gitCommitHash_;
     std::unique_ptr<ConfiguredItem> root_;
 
     QJsonObject itemToJson(const ConfiguredItem *item) const;

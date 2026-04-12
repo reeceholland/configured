@@ -1,25 +1,33 @@
 #pragma once
 
 #include <QDialog>
-#include <QCheckBox>
-#include <qlabel.h>
 
 class QLineEdit;
 class QTextEdit;
+class QLabel;
+class QCheckBox;
 class ConfiguredProject;
+class GitService;
 
 class ProjectMetadataDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ProjectMetadataDialog(ConfiguredProject *project, QWidget *parent = nullptr);
+    explicit ProjectMetadataDialog(ConfiguredProject *project,
+                                   const QString &workingDir,
+                                   GitService *gitService,
+                                   QWidget *parent = nullptr);
 
 private:
     void loadFromProject();
     void applyToProject();
 
+private:
     ConfiguredProject *project_ = nullptr;
+    QString workingDir_;
+    GitService *gitService_ = nullptr;
+
     QLineEdit *nameEdit_ = nullptr;
     QTextEdit *descriptionEdit_ = nullptr;
     QLineEdit *authorEdit_ = nullptr;
@@ -28,4 +36,5 @@ private:
     QLabel *lastModifiedLabel_ = nullptr;
     QLineEdit *robotPlatformEdit_ = nullptr;
     QCheckBox *gitManagedCheck_ = nullptr;
+    QLabel *gitCommitLabel_ = nullptr;
 };

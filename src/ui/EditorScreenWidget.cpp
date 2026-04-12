@@ -131,11 +131,12 @@ void EditorScreenWidget::createNewProject()
 {
     project_ = std::make_unique<ConfiguredProject>();
     project_->createSampleProject();
+    currentFilePath_.clear();
     selectedItem_ = nullptr;
     rebuildTree();
 }
 
-bool EditorScreenWidget::saveProject(const QString &filePath) const
+bool EditorScreenWidget::saveProject(const QString &filePath)
 {
     if (!project_)
     {
@@ -145,19 +146,31 @@ bool EditorScreenWidget::saveProject(const QString &filePath) const
     QString duplicate;
     if (project_->hasDuplicateParameterKeys(&duplicate))
     {
-        QMessageBox::warning(nullptr, "Save Failed",
-                             QString("Cannot save project. Duplicate parameter key: '%1'").arg(duplicate));
+        QMessageBox::warning(
+            this,
+            "Save Failed",
+            QString("Cannot save project. Duplicate parameter key: '%1'").arg(duplicate));
         return false;
     }
 
-    if (requiredCheck_->isChecked() && (parameterKeyEdit_->text().trimmed().isEmpty() || parameterValueEdit_->text().trimmed().isEmpty()))
+    if (requiredCheck_->isChecked() &&
+        (parameterKeyEdit_->text().trimmed().isEmpty() ||
+         parameterValueEdit_->text().trimmed().isEmpty()))
     {
-        QMessageBox::warning(nullptr, "Save Failed",
-                             QString("Cannot save project. Required parameters must have a key and value."));
+        QMessageBox::warning(
+            this,
+            "Save Failed",
+            "Cannot save project. Required parameters must have a key and value.");
         return false;
     }
 
-    return project_->saveToFile(filePath);
+    const bool ok = project_->saveToFile(filePath);
+    if (ok)
+    {
+        currentFilePath_ = filePath;
+    }
+
+    return ok;
 }
 
 bool EditorScreenWidget::loadProject(const QString &filePath)
@@ -169,6 +182,7 @@ bool EditorScreenWidget::loadProject(const QString &filePath)
     }
 
     project_ = std::move(loadedProject);
+    currentFilePath_ = filePath;
     selectedItem_ = nullptr;
     rebuildTree();
     return true;
@@ -433,4 +447,14 @@ ConfiguredProject *EditorScreenWidget::project()
 const ConfiguredProject *EditorScreenWidget::project() const
 {
     return project_.get();
+}
+
+QString EditorScreenWidget::currentFilePath() const
+{
+    return currentFilePath_;
+}
+
+bool EditorScreenWidget::hasProjectFilePath() const
+{
+    return !currentFilePath_.trimmed().isEmpty();
 }

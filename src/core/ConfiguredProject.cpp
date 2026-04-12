@@ -136,6 +136,16 @@ void ConfiguredProject::setGitManaged(bool managed)
     git_managed_ = managed;
 }
 
+const QString &ConfiguredProject::gitCommitHash() const
+{
+    return gitCommitHash_;
+}
+
+void ConfiguredProject::setGitCommitHash(const QString &hash)
+{
+    gitCommitHash_ = hash;
+}
+
 ConfiguredItem *ConfiguredProject::root()
 {
     return root_.get();
@@ -229,6 +239,7 @@ bool ConfiguredProject::saveToFile(const QString &filePath) const
     rootObj["lastModified"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     rootObj["robotPlatform"] = robot_platform_;
     rootObj["gitManaged"] = git_managed_;
+    rootObj["gitCommitHash"] = gitCommitHash_;
     rootObj["root"] = itemToJson(root_.get());
 
     QJsonDocument doc(rootObj);
