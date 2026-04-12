@@ -17,6 +17,7 @@
 #include "ui/EditorScreenWidget.hpp"
 #include "ui/GitConfigDialog.hpp"
 #include "ui/HomeScreenWidget.hpp"
+#include "ui/HelpScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
 
 MainWindow::MainWindow()
@@ -29,9 +30,11 @@ MainWindow::MainWindow()
 
   home_ = new HomeScreenWidget(this);
   editor_ = new EditorScreenWidget(this);
+  help_ = new HelpScreenWidget(this);
 
   stack_->addWidget(home_);
   stack_->addWidget(editor_);
+  stack_->addWidget(help_);
 
   toolbar_ = addToolBar("Main");
   toolbar_->setMovable(false);
@@ -41,6 +44,8 @@ MainWindow::MainWindow()
   removeItemAction_ = new QAction("Remove Selected", this);
   goHomeAction_ = new QAction("Home", this);
   projectMetadataAction_ = new QAction("Project Metadata", this);
+  versionAction_ = new QAction("Version", this);
+  helpAction_ = new QAction("Help", this);
 
   gitInitAction_ = new QAction("Git Init", this);
   gitStatusAction_ = new QAction("Git Status", this);
@@ -81,40 +86,59 @@ MainWindow::MainWindow()
   gitButton_->setPopupMode(QToolButton::InstantPopup);
   toolbar_->addWidget(gitButton_);
 
+  auto *aboutMenu = new QMenu(this);
+  aboutMenu->addAction(versionAction_);
+  aboutMenu->addAction(helpAction_);
+
+  auto *aboutButton = new QToolButton(this);
+  aboutButton->setText("About");
+  aboutButton->setMenu(aboutMenu);
+  aboutButton->setPopupMode(QToolButton::InstantPopup);
+  toolbar_->addWidget(aboutButton);
+
+  connect(helpAction_, &QAction::triggered, this, [this]()
+          { showHelp(); });
+
+  connect(help_, &HelpScreenWidget::backRequested, this, [this]()
+          { showEditor(); });
+
+  connect(versionAction_, &QAction::triggered, this, [this]()
+          { QMessageBox::information(this, "About CONFIGURED", QString("CONFIGURED Version %1").arg(APP_VERSION)); });
+
   connect(gitConfigAction_, &QAction::triggered, this, [this]()
           {
-        QString output;
-        if (!gitService_.isGitAvailable(&output))
-        {
-            QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
-            return;
-        }
+      QString output;
+      if (!gitService_.isGitAvailable(&output))
+      {
+        QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
+        return;
+      }
 
-        const QString workingDir = currentProjectWorkingDirectory();
+      const QString workingDir = currentProjectWorkingDirectory();
 
-        GitConfigDialog dialog(&gitService_, workingDir, this);
-        dialog.exec(); });
+      GitConfigDialog dialog(&gitService_, workingDir, this);
+      dialog.exec(); });
 
   connect(saveProjectAction_, &QAction::triggered, this, [this]()
           {
-        const QString filePath = QFileDialog::getSaveFileName(
-            this,
-            "Save Configured Project",
-            QString(),
-            "Configured Project (*.configured);;JSON Files (*.json);;All Files (*)");
+      const QString filePath = QFileDialog::getSaveFileName(
+          this,
+          "Save Configured Project",
+          QString(),
+          "Configured Project (*.configured);;JSON Files (*.json);;All Files (*)");
 
-        if (filePath.isEmpty())
-        {
-            return;
-        }
+      if (filePath.isEmpty())
+      {
+        return;
+      }
 
-        if (!editor_->saveProject(filePath))
-        {
-            QMessageBox::warning(this, "Save Failed", "Could not save project file.");
-            return;
-        }
+      if (!editor_->saveProject(filePath))
+      {
+        QMessageBox::warning(this, "Save Failed", "Could not save project file.");
+        return;
+      }
 
-        updateWindowTitle(); });
+      updateWindowTitle(); });
 
   connect(addChildAction_, &QAction::triggered, this, [this]()
           { editor_->addChildToSelected(); });
@@ -124,200 +148,199 @@ MainWindow::MainWindow()
 
   connect(goHomeAction_, &QAction::triggered, this, [this]()
           {
-        QMessageBox::StandardButton reply = QMessageBox::question(
-            this,
-            "Go Home",
-            "Are you sure you want to return to the home screen? Unsaved changes will be lost.",
-            QMessageBox::Yes | QMessageBox::No);
+      QMessageBox::StandardButton reply = QMessageBox::question(
+          this,
+          "Go Home",
+          "Are you sure you want to return to the home screen? Unsaved changes will be lost.",
+          QMessageBox::Yes | QMessageBox::No);
 
-        if (reply == QMessageBox::Yes)
-        {
-            showHome();
-        } });
+      if (reply == QMessageBox::Yes)
+      {
+        showHome();
+      } });
 
   connect(projectMetadataAction_, &QAction::triggered, this, [this]()
           {
-        if (!editor_ || !editor_->project())
-        {
-            return;
-        }
+      if (!editor_ || !editor_->project())
+      {
+        return;
+      }
 
-        ProjectMetadataDialog dialog(
-            editor_->project(),
-            currentProjectWorkingDirectory(),
-            &gitService_,
-            this);
+      ProjectMetadataDialog dialog(
+          editor_->project(),
+          currentProjectWorkingDirectory(),
+          &gitService_,
+          this);
 
-        if (dialog.exec() == QDialog::Accepted)
-        {
-            updateWindowTitle();
-            updateGitUiVisibility();
-        } });
+      if (dialog.exec() == QDialog::Accepted)
+      {
+        updateWindowTitle();
+        updateGitUiVisibility();
+      } });
 
   connect(home_, &HomeScreenWidget::openProjectRequested, this, [this]()
           {
-    const QString filePath = QFileDialog::getOpenFileName(
-        this,
-        "Open Configured Project",
-        QString(),
-        "Configured Project (*.configured);;JSON Files (*.json);;All Files (*)"
-    );
+      const QString filePath = QFileDialog::getOpenFileName(
+          this,
+          "Open Configured Project",
+          QString(),
+          "Configured Project (*.configured);;JSON Files (*.json);;All Files (*)");
 
-    if (filePath.isEmpty())
-    {
+      if (filePath.isEmpty())
+      {
         return;
-    }
+      }
 
-    if (!editor_->loadProject(filePath))
-    {
+      if (!editor_->loadProject(filePath))
+      {
         QMessageBox::warning(this, "Open Failed", "Could not load project file.");
         return;
-    }
+      }
 
-    updateWindowTitle();
-    updateGitUiVisibility();
-    showEditor(); });
+      updateWindowTitle();
+      updateGitUiVisibility();
+      showEditor(); });
 
   connect(home_, &HomeScreenWidget::createNewProjectRequested, this, [this]()
           { promptAndCreateProject(); });
 
   connect(gitInitAction_, &QAction::triggered, this, [this]()
           {
-        const QString workingDir = currentProjectWorkingDirectory();
+      const QString workingDir = currentProjectWorkingDirectory();
 
-        if (workingDir.isEmpty())
-        {
-            QMessageBox::information(this, "Git", "Save the project first before initializing Git.");
-            return;
-        }
+      if (workingDir.isEmpty())
+      {
+        QMessageBox::information(this, "Git", "Save the project first before initializing Git.");
+        return;
+      }
 
-        QString output;
+      QString output;
 
-        if (!gitService_.isGitAvailable(&output))
-        {
-            QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
-            return;
-        }
+      if (!gitService_.isGitAvailable(&output))
+      {
+        QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
+        return;
+      }
 
-        if (gitService_.isRepository(workingDir, &output))
-        {
-            QMessageBox::information(this, "Git", "This folder is already a Git repository.");
-
-            if (editor_->project())
-            {
-                editor_->project()->setGitManaged(true);
-            }
-
-            return;
-        }
-
-        if (!gitService_.initRepository(workingDir, &output))
-        {
-            QMessageBox::warning(this, "Git Init Failed", output);
-            return;
-        }
+      if (gitService_.isRepository(workingDir, &output))
+      {
+        QMessageBox::information(this, "Git", "This folder is already a Git repository.");
 
         if (editor_->project())
         {
-            editor_->project()->setGitManaged(true);
+          editor_->project()->setGitManaged(true);
         }
 
-        QMessageBox::information(
-            this,
-            "Git Init",
-            output.isEmpty() ? "Repository initialized." : output); });
+        return;
+      }
+
+      if (!gitService_.initRepository(workingDir, &output))
+      {
+        QMessageBox::warning(this, "Git Init Failed", output);
+        return;
+      }
+
+      if (editor_->project())
+      {
+        editor_->project()->setGitManaged(true);
+      }
+
+      QMessageBox::information(
+          this,
+          "Git Init",
+          output.isEmpty() ? "Repository initialized." : output); });
 
   connect(gitStatusAction_, &QAction::triggered, this, [this]()
           {
-        const QString workingDir = currentProjectWorkingDirectory();
+      const QString workingDir = currentProjectWorkingDirectory();
 
-        if (workingDir.isEmpty())
-        {
-            QMessageBox::information(this, "Git", "Save the project first before checking status.");
-            return;
-        }
+      if (workingDir.isEmpty())
+      {
+        QMessageBox::information(this, "Git", "Save the project first before checking status.");
+        return;
+      }
 
-        QString output;
+      QString output;
 
-        if (!gitService_.status(workingDir, &output))
-        {
-            QMessageBox::warning(this, "Git Status Failed", output);
-            return;
-        }
+      if (!gitService_.status(workingDir, &output))
+      {
+        QMessageBox::warning(this, "Git Status Failed", output);
+        return;
+      }
 
-        if (output.trimmed().isEmpty())
-        {
-            output = "Working tree clean.";
-        }
+      if (output.trimmed().isEmpty())
+      {
+        output = "Working tree clean.";
+      }
 
-        QMessageBox::information(this, "Git Status", output); });
+      QMessageBox::information(this, "Git Status", output); });
 
   connect(gitCommitAction_, &QAction::triggered, this, [this]()
           {
-            const QString workingDir = currentProjectWorkingDirectory();
+      const QString workingDir = currentProjectWorkingDirectory();
 
-            if (workingDir.isEmpty())
-            {
-              QMessageBox::information(this, "Git", "Save the project first before committing.");
-              return;
-            }
+      if (workingDir.isEmpty())
+      {
+        QMessageBox::information(this, "Git", "Save the project first before committing.");
+        return;
+      }
 
-            QString output;
+      QString output;
 
-            if (!gitService_.isRepository(workingDir, &output))
-            {
-              QMessageBox::warning(this, "Git Commit", "This folder is not a Git repository.");
-              return;
-            }
+      if (!gitService_.isRepository(workingDir, &output))
+      {
+        QMessageBox::warning(this, "Git Commit", "This folder is not a Git repository.");
+        return;
+      }
 
-            bool ok = false;
-            const QString message = QInputDialog::getText(
-                this,
-                "Git Commit",
-                "Commit message:",
-                QLineEdit::Normal,
-                "Update configured project",
-                &ok);
+      bool ok = false;
+      const QString message = QInputDialog::getText(
+          this,
+          "Git Commit",
+          "Commit message:",
+          QLineEdit::Normal,
+          "Update configured project",
+          &ok);
 
-            if (!ok || message.trimmed().isEmpty())
-            {
-              return;
-            }
+      if (!ok || message.trimmed().isEmpty())
+      {
+        return;
+      }
 
-            if (!editor_->saveProject(editor_->currentFilePath()))
-            {
-              QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
-              return;
-            }
+      if (!editor_->saveProject(editor_->currentFilePath()))
+      {
+        QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
+        return;
+      }
 
-            if (!gitService_.addAll(workingDir, &output))
-            {
-              QMessageBox::warning(this, "Git Commit Failed", output);
-              return;
-            }
+      if (!gitService_.addAll(workingDir, &output))
+      {
+        QMessageBox::warning(this, "Git Commit Failed", output);
+        return;
+      }
 
-            if (!gitService_.commit(workingDir, message.trimmed(), &output))
-            {
-              QMessageBox::warning(this, "Git Commit Failed", output);
-              return;
-            }
+      if (!gitService_.commit(workingDir, message.trimmed(), &output))
+      {
+        QMessageBox::warning(this, "Git Commit Failed", output);
+        return;
+      }
 
-            if (editor_->project())
-            {
-              QString hash;
-              QString hashOutput;
-              if (gitService_.getCommitHash(workingDir, &hash, &hashOutput))
-              {
-                editor_->project()->setGitCommitHash(hash);
+      if (editor_->project())
+      {
+        QString hash;
+        QString hashOutput;
+        if (gitService_.getCommitHash(workingDir, &hash, &hashOutput))
+        {
+          editor_->project()->setGitCommitHash(hash);
 
-                // Save again so the new hash is written into the .configured file
-                editor_->saveProject(editor_->currentFilePath());
-              }
-            }
-            QMessageBox::information(
-                this,
-                "Git Commit",
-                output.isEmpty() ? "Commit created." : output); });
+          // Save again so the new hash is written into the .configured file
+          editor_->saveProject(editor_->currentFilePath());
+        }
+      }
+      QMessageBox::information(
+          this,
+          "Git Commit",
+          output.isEmpty() ? "Commit created." : output); });
 
   showHome();
   setEditorActionsEnabled(false);
@@ -535,4 +558,14 @@ void MainWindow::updateGitUiVisibility()
   }
   qDebug() << "Git UI visibility updated. showGit:" << showGit;
   gitButton_->setVisible(showGit);
+}
+
+void MainWindow::showHelp()
+{
+  stack_->setCurrentWidget(help_);
+
+  if (toolbar_)
+  {
+    toolbar_->setVisible(true);
+  }
 }

@@ -10,6 +10,7 @@ class QToolButton;
 class QMenu;
 class HomeScreenWidget;
 class EditorScreenWidget;
+class HelpScreenWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -21,6 +22,7 @@ public:
 private:
     void showHome();
     void showEditor();
+    void showHelp();
     void setEditorActionsEnabled(bool enabled);
     void updateWindowTitle();
     void promptAndCreateProject();
@@ -32,6 +34,7 @@ private:
 
     HomeScreenWidget *home_ = nullptr;
     EditorScreenWidget *editor_ = nullptr;
+    HelpScreenWidget *help_ = nullptr;
 
     QToolBar *toolbar_ = nullptr;
     QToolButton *gitButton_ = nullptr;
@@ -41,6 +44,8 @@ private:
     QAction *removeItemAction_ = nullptr;
     QAction *goHomeAction_ = nullptr;
     QAction *projectMetadataAction_ = nullptr;
+    QAction *versionAction_ = nullptr;
+    QAction *helpAction_ = nullptr;
 
     QAction *gitInitAction_ = nullptr;
     QAction *gitStatusAction_ = nullptr;
