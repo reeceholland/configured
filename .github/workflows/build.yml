@@ -36,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Configured-windows-debug
-          path: out/build/x64-debug/Configured.exe
+          path: out/build/x64-debug/Debug/Configured.exe
