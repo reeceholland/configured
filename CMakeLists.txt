@@ -49,3 +49,8 @@ target_link_libraries(Configured PRIVATE
     Qt6::Core
     Qt6::Gui
 )
+
+include(CTest)
+enable_testing()
+
+add_subdirectory(tests)

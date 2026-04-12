@@ -4,8 +4,9 @@
 #include <memory>
 #include <QSet>
 
+#include "core/ConfiguredItem.hpp"
+
 class QJsonObject;
-class ConfiguredItem;
 
 class ConfiguredProject
 {

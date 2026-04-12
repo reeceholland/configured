@@ -11,6 +11,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QDir>
+#include <QDebug>
 
 #include "core/ConfiguredProject.hpp"
 #include "ui/EditorScreenWidget.hpp"
@@ -445,6 +446,8 @@ void MainWindow::promptAndCreateProject()
     return;
   }
 
+  qDebug() << "Git managed:" << editor_->project()->isGitManaged();
+
   if (editor_->project()->isGitManaged())
   {
     const QString baseFolder = QFileDialog::getExistingDirectory(
@@ -479,6 +482,13 @@ void MainWindow::promptAndCreateProject()
     {
       QMessageBox::warning(this, "Project Creation Failed",
                            "Could not save project file.");
+      showHome();
+      return;
+    }
+
+    if (!gitService_.isGitAvailable())
+    {
+      QMessageBox::warning(this, "Git", "Git not found. Please ensure Git is installed and available in the system PATH.");
       showHome();
       return;
     }
@@ -523,6 +533,6 @@ void MainWindow::updateGitUiVisibility()
   {
     showGit = editor_->project()->isGitManaged();
   }
-
+  qDebug() << "Git UI visibility updated. showGit:" << showGit;
   gitButton_->setVisible(showGit);
 }
