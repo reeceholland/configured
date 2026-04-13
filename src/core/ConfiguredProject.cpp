@@ -52,6 +52,9 @@ ConfiguredProject::ConfiguredProject()
       company_(""),
       version_(""),
       robot_platform_(""),
+      git_managed_(false),
+      gitCommitHash_(""),
+      last_modified_(QDateTime::currentDateTime().toString(Qt::ISODate)),
       root_(std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot))
 {
 }

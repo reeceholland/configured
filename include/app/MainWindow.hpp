@@ -46,6 +46,7 @@ private:
     QAction *projectMetadataAction_ = nullptr;
     QAction *versionAction_ = nullptr;
     QAction *helpAction_ = nullptr;
+    QAction *gitButtonAction_ = nullptr;
 
     QAction *gitInitAction_ = nullptr;
     QAction *gitStatusAction_ = nullptr;

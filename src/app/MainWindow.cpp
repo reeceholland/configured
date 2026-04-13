@@ -25,6 +25,12 @@ MainWindow::MainWindow()
   setWindowTitle("CONFIGURED");
   resize(800, 400);
 
+  this->setStyleSheet(R"(
+      QToolButton::menu-indicator {
+          image: none;
+      }
+  )");
+
   stack_ = new QStackedWidget(this);
   setCentralWidget(stack_);
 
@@ -84,7 +90,7 @@ MainWindow::MainWindow()
   gitButton_->setText("Git");
   gitButton_->setMenu(gitMenu);
   gitButton_->setPopupMode(QToolButton::InstantPopup);
-  toolbar_->addWidget(gitButton_);
+  gitButtonAction_ = toolbar_->addWidget(gitButton_);
 
   auto *aboutMenu = new QMenu(this);
   aboutMenu->addAction(versionAction_);
@@ -355,11 +361,10 @@ void MainWindow::showHome()
     toolbar_->setVisible(false);
   }
 
-  if (gitButton_)
+  if (gitButtonAction_)
   {
-    gitButton_->setVisible(false);
+    gitButtonAction_->setVisible(false);
   }
-
   setEditorActionsEnabled(false);
 }
 
@@ -555,9 +560,21 @@ void MainWindow::updateGitUiVisibility()
   if (editor_ && editor_->project())
   {
     showGit = editor_->project()->isGitManaged();
+
+    if (showGit)
+    {
+      const QString workingDir = currentProjectWorkingDirectory();
+      QString output;
+      if (workingDir.isEmpty() || !gitService_.isGitAvailable(&output) || !gitService_.isRepository(workingDir, &output))
+      {
+        showGit = false;
+      }
+    }
   }
-  qDebug() << "Git UI visibility updated. showGit:" << showGit;
-  gitButton_->setVisible(showGit);
+  if (gitButtonAction_)
+  {
+    gitButtonAction_->setVisible(showGit);
+  }
 }
 
 void MainWindow::showHelp()
