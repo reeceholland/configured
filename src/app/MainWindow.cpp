@@ -214,144 +214,13 @@ MainWindow::MainWindow() {
     promptAndCreateProject();
   });
 
-  connect(gitInitAction_, &QAction::triggered, this, [this]() {
-    const QString workingDir = currentProjectWorkingDirectory();
+  connect(gitInitAction_, &QAction::triggered, this, &MainWindow::onGitInit);
 
-    if (workingDir.isEmpty()) {
-      QMessageBox::information(this, "Git", "Save the project first before initializing Git.");
-      return;
-    }
+  connect(gitStatusAction_, &QAction::triggered, this, &MainWindow::onGitStatus);
 
-    QString output;
+  connect(gitCommitAction_, &QAction::triggered, this, &MainWindow::onGitCommit);
 
-    if (!gitService_.isGitAvailable(&output)) {
-      QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
-      return;
-    }
-
-    if (gitService_.isRepository(workingDir, &output)) {
-      QMessageBox::information(this, "Git", "This folder is already a Git repository.");
-
-      if (editor_->project()) {
-        editor_->project()->setGitManaged(true);
-      }
-
-      return;
-    }
-
-    if (!gitService_.initRepository(workingDir, &output)) {
-      QMessageBox::warning(this, "Git Init Failed", output);
-      return;
-    }
-
-    if (editor_->project()) {
-      editor_->project()->setGitManaged(true);
-    }
-
-    QMessageBox::information(this, "Git Init",
-                             output.isEmpty() ? "Repository initialized." : output);
-  });
-
-  connect(gitStatusAction_, &QAction::triggered, this, [this]() {
-    const QString workingDir = currentProjectWorkingDirectory();
-
-    if (workingDir.isEmpty()) {
-      QMessageBox::information(this, "Git", "Save the project first before checking status.");
-      return;
-    }
-
-    QString output;
-
-    if (!gitService_.status(workingDir, &output)) {
-      QMessageBox::warning(this, "Git Status Failed", output);
-      return;
-    }
-
-    if (output.trimmed().isEmpty()) {
-      output = "Working tree clean.";
-    }
-
-    QMessageBox::information(this, "Git Status", output);
-  });
-
-  connect(gitCommitAction_, &QAction::triggered, this, [this]() {
-    const QString workingDir = currentProjectWorkingDirectory();
-
-    if (workingDir.isEmpty()) {
-      QMessageBox::information(this, "Git", "Save the project first before committing.");
-      return;
-    }
-
-    QString output;
-
-    if (!gitService_.isRepository(workingDir, &output)) {
-      QMessageBox::warning(this, "Git Commit", "This folder is not a Git repository.");
-      return;
-    }
-
-    bool ok = false;
-    const QString message = QInputDialog::getText(
-        this, "Git Commit", "Commit message:", QLineEdit::Normal, "Update configured project", &ok);
-
-    if (!ok || message.trimmed().isEmpty()) {
-      return;
-    }
-
-    if (!editor_->saveProject(editor_->currentFilePath())) {
-      QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
-      return;
-    }
-
-    if (!gitService_.addAll(workingDir, &output)) {
-      QMessageBox::warning(this, "Git Commit Failed", output);
-      return;
-    }
-
-    if (!gitService_.commit(workingDir, message.trimmed(), &output)) {
-      QMessageBox::warning(this, "Git Commit Failed", output);
-      return;
-    }
-
-    if (editor_->project()) {
-      QString hash;
-      QString hashOutput;
-      if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
-        editor_->project()->setGitCommitHash(hash);
-
-        // Save again so the new hash is written into the .configured file
-        editor_->saveProject(editor_->currentFilePath());
-      }
-    }
-    QMessageBox::information(this, "Git Commit", output.isEmpty() ? "Commit created." : output);
-  });
-
-  connect(exportXmlAction_, &QAction::triggered, this, [this]() {
-    if (!editor_ || !editor_->project()) {
-      QMessageBox::information(this, "Export", "No project loaded to export.");
-      return;
-    }
-
-    const QString defaultName = editor_->project()->name().trimmed().isEmpty()
-                                    ? "parameters.xml"
-                                    : editor_->project()->name().trimmed() + "_parameters.xml";
-
-    const QString filePath = QFileDialog::getSaveFileName(this, "Export Parameters to XML",
-                                                          defaultName, "XML Files (*.xml)");
-
-    if (filePath.isEmpty()) {
-      return;
-    }
-
-    XmlProjectExporter exporter;
-    QString error;
-
-    if (!exporter.exportParameters(*editor_->project(), filePath, &error)) {
-      QMessageBox::warning(this, "Export Failed", error);
-      return;
-    }
-
-    QMessageBox::information(this, "Export", "Parameters exported successfully.");
-  });
+  connect(exportXmlAction_, &QAction::triggered, this, &MainWindow::exportParametersToXml);
 
   connect(exportJsonAction_, &QAction::triggered, this, &MainWindow::exportParametersToJson);
 
@@ -576,6 +445,144 @@ void MainWindow::exportParametersToJson() {
   }
 
   JsonProjectExporter exporter;
+  QString error;
+
+  if (!exporter.exportParameters(*editor_->project(), filePath, &error)) {
+    QMessageBox::warning(this, "Export Failed", error);
+    return;
+  }
+
+  QMessageBox::information(this, "Export", "Parameters exported successfully.");
+}
+
+void MainWindow::onGitInit() {
+  const QString workingDir = currentProjectWorkingDirectory();
+
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Git", "Save the project first before initializing Git.");
+    return;
+  }
+
+  QString output;
+
+  if (!gitService_.isGitAvailable(&output)) {
+    QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
+    return;
+  }
+
+  if (gitService_.isRepository(workingDir, &output)) {
+    QMessageBox::information(this, "Git", "This folder is already a Git repository.");
+
+    if (editor_->project()) {
+      editor_->project()->setGitManaged(true);
+    }
+
+    return;
+  }
+
+  if (!gitService_.initRepository(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Init Failed", output);
+    return;
+  }
+
+  if (editor_->project()) {
+    editor_->project()->setGitManaged(true);
+  }
+
+  QMessageBox::information(this, "Git Init", output.isEmpty() ? "Repository initialized." : output);
+}
+
+void MainWindow::onGitStatus() {
+  const QString workingDir = currentProjectWorkingDirectory();
+
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Git", "Save the project first before checking status.");
+    return;
+  }
+
+  QString output;
+
+  if (!gitService_.status(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Status Failed", output);
+    return;
+  }
+
+  if (output.trimmed().isEmpty()) {
+    output = "Working tree clean.";
+  }
+
+  QMessageBox::information(this, "Git Status", output);
+}
+
+void MainWindow::onGitCommit() {
+  const QString workingDir = currentProjectWorkingDirectory();
+
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Git", "Save the project first before committing.");
+    return;
+  }
+
+  QString output;
+
+  if (!gitService_.isRepository(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Commit", "This folder is not a Git repository.");
+    return;
+  }
+
+  bool ok = false;
+  const QString message = QInputDialog::getText(
+      this, "Git Commit", "Commit message:", QLineEdit::Normal, "Update configured project", &ok);
+
+  if (!ok || message.trimmed().isEmpty()) {
+    return;
+  }
+
+  if (!editor_->saveProject(editor_->currentFilePath())) {
+    QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
+    return;
+  }
+
+  if (!gitService_.addAll(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Commit Failed", output);
+    return;
+  }
+
+  if (!gitService_.commit(workingDir, message.trimmed(), &output)) {
+    QMessageBox::warning(this, "Git Commit Failed", output);
+    return;
+  }
+
+  if (editor_->project()) {
+    QString hash;
+    QString hashOutput;
+    if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
+      editor_->project()->setGitCommitHash(hash);
+
+      // Save again so the new hash is written into the .configured file
+      editor_->saveProject(editor_->currentFilePath());
+    }
+  }
+  QMessageBox::information(this, "Git Commit", output.isEmpty() ? "Commit created." : output);
+}
+
+void MainWindow::exportParametersToXml() {
+  if (!editor_ || !editor_->project()) {
+    QMessageBox::information(this, "Export", "No project loaded to export.");
+    return;
+  }
+
+  const QString defaultName = editor_->project()->name().trimmed().isEmpty()
+                                  ? "parameters.xml"
+                                  : editor_->project()->name().trimmed() + "_parameters.xml";
+
+  const QString filePath = QFileDialog::getSaveFileName(this, "Export Parameters to XML",
+                                                        defaultName, "XML Files (*.xml)");
+
+  if (filePath.isEmpty()) {
+    return;
+  }
+
+  XmlProjectExporter exporter;
   QString error;
 
   if (!exporter.exportParameters(*editor_->project(), filePath, &error)) {

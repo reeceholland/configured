@@ -29,6 +29,12 @@ class MainWindow : public QMainWindow {
   void updateGitUiVisibility();
   QString currentProjectWorkingDirectory() const;
   void exportParametersToJson();
+  void exportParametersToXml();
+
+ private slots:
+  void onGitInit();
+  void onGitStatus();
+  void onGitCommit();
 
  private:
   QStackedWidget* stack_ = nullptr;
