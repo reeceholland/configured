@@ -19,6 +19,7 @@
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/HelpScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
+#include "export/XmlProjectExporter.hpp"
 
 MainWindow::MainWindow()
 {

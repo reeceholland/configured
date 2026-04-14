@@ -58,15 +58,14 @@ public:
   std::vector<std::unique_ptr<ConfiguredItem>> &children();
   const std::vector<std::unique_ptr<ConfiguredItem>> &children() const;
 
-  bool isParameter() const;
-
   /**
    * @brief Returns true if this item should be exported as a parameter.
    */
   bool isParameter() const;
 
   /**
-   * @brief Returns the parameter type as a string for export.
+   * @brief
+   *
    */
   QString valueTypeString() const;
 
