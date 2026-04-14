@@ -535,6 +535,18 @@ void MainWindow::promptAndCreateProject()
 
   updateWindowTitle();
   showEditor();
+
+  XmlProjectExporter exporter;
+  QString error;
+
+  if (!exporter.exportParameters(*editor_->project(), "test.xml", &error))
+  {
+    qDebug() << "Export failed:" << error;
+  }
+  else
+  {
+    qDebug() << "Export success";
+  }
 }
 
 QString MainWindow::currentProjectWorkingDirectory() const

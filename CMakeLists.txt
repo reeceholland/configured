@@ -42,11 +42,14 @@ add_executable(Configured
     src/ui/HelpScreenWidget.cpp
     include/ui/HelpScreenWidget.hpp
 
+    src/export/XmlProjectExporter.cpp
+
     resources/app.qrc
 )
 
 target_include_directories(Configured PRIVATE
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(Configured PRIVATE

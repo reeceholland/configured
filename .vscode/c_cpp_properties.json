@@ -8,7 +8,8 @@
                 "C:/Qt/6.10.1/msvc2022_64/include/QtWidgets",
                 "C:/Qt/6.10.1/msvc2022_64/include",
                 "C:/Qt/6.10.1/msvc2022_64/include/QtCore",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src"
             ],
             "defines": [
                 "_DEBUG",

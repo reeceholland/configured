@@ -3,8 +3,10 @@
 #include <QString>
 #include <memory>
 #include <QSet>
+#include <vector>
 
 #include "core/ConfiguredItem.hpp"
+#include "export/ExportParameter.hpp"
 
 class QJsonObject;
 
@@ -50,6 +52,8 @@ public:
     const QString &gitCommitHash() const;
     void setGitCommitHash(const QString &hash);
 
+    std::vector<ExportParameter> collectParameters() const;
+
 private:
     QString name_;
     QString description_;
@@ -64,4 +68,8 @@ private:
 
     QJsonObject itemToJson(const ConfiguredItem *item) const;
     std::unique_ptr<ConfiguredItem> itemFromJson(const QJsonObject &obj);
+
+    void collectParametersRecursive(const ConfiguredItem *item,
+                                    const QString &parentPath,
+                                    std::vector<ExportParameter> &out) const;
 };

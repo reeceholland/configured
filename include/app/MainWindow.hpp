@@ -14,44 +14,46 @@ class HelpScreenWidget;
 
 class MainWindow : public QMainWindow
 {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    MainWindow();
+  MainWindow();
 
 private:
-    void showHome();
-    void showEditor();
-    void showHelp();
-    void setEditorActionsEnabled(bool enabled);
-    void updateWindowTitle();
-    void promptAndCreateProject();
-    void updateGitUiVisibility();
-    QString currentProjectWorkingDirectory() const;
+  void showHome();
+  void showEditor();
+  void showHelp();
+  void setEditorActionsEnabled(bool enabled);
+  void updateWindowTitle();
+  void promptAndCreateProject();
+  void updateGitUiVisibility();
+  QString currentProjectWorkingDirectory() const;
 
 private:
-    QStackedWidget *stack_ = nullptr;
+  QStackedWidget *stack_ = nullptr;
 
-    HomeScreenWidget *home_ = nullptr;
-    EditorScreenWidget *editor_ = nullptr;
-    HelpScreenWidget *help_ = nullptr;
+  HomeScreenWidget *home_ = nullptr;
+  EditorScreenWidget *editor_ = nullptr;
+  HelpScreenWidget *help_ = nullptr;
 
-    QToolBar *toolbar_ = nullptr;
-    QToolButton *gitButton_ = nullptr;
+  QToolBar *toolbar_ = nullptr;
+  QToolButton *gitButton_ = nullptr;
 
-    QAction *saveProjectAction_ = nullptr;
-    QAction *addChildAction_ = nullptr;
-    QAction *removeItemAction_ = nullptr;
-    QAction *goHomeAction_ = nullptr;
-    QAction *projectMetadataAction_ = nullptr;
-    QAction *versionAction_ = nullptr;
-    QAction *helpAction_ = nullptr;
-    QAction *gitButtonAction_ = nullptr;
+  QAction *saveProjectAction_ = nullptr;
+  QAction *addChildAction_ = nullptr;
+  QAction *removeItemAction_ = nullptr;
+  QAction *goHomeAction_ = nullptr;
+  QAction *projectMetadataAction_ = nullptr;
+  QAction *versionAction_ = nullptr;
+  QAction *helpAction_ = nullptr;
+  QAction *gitButtonAction_ = nullptr;
 
-    QAction *gitInitAction_ = nullptr;
-    QAction *gitStatusAction_ = nullptr;
-    QAction *gitCommitAction_ = nullptr;
-    QAction *gitConfigAction_ = nullptr;
+  QAction *gitInitAction_ = nullptr;
+  QAction *gitStatusAction_ = nullptr;
+  QAction *gitCommitAction_ = nullptr;
+  QAction *gitConfigAction_ = nullptr;
 
-    GitService gitService_;
+  QAction *exportAction_ = nullptr;
+
+  GitService gitService_;
 };
