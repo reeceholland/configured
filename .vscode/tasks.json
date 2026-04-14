@@ -7,6 +7,14 @@
       "command": "cmake --build out/build/x64-debug",
       "problemMatcher": "$msCompile",
       "group": "build"
+    },
+    {
+      "label": "Generate Docs",
+      "type": "shell",
+      "command": "cmake --build out/build/x64-debug --target doc",
+      "problemMatcher": [],
+      "group": "build"
     }
+
   ]
 }
