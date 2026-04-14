@@ -182,6 +182,8 @@ MainWindow::MainWindow() {
       return;
     }
 
+    refreshProjectGitMetadata();
+
     ProjectMetadataDialog dialog(editor_->project(), currentProjectWorkingDirectory(), &gitService_,
                                  this);
 
@@ -332,8 +334,6 @@ void MainWindow::promptAndCreateProject() {
     return;
   }
 
-  qDebug() << "Git managed:" << editor_->project()->isGitManaged();
-
   if (editor_->project()->isGitManaged()) {
     const QString baseFolder =
         QFileDialog::getExistingDirectory(this, "Select Parent Folder for Git Project");
@@ -443,6 +443,7 @@ void MainWindow::exportParametersToJson() {
   if (filePath.isEmpty()) {
     return;
   }
+  refreshProjectGitMetadata();
 
   JsonProjectExporter exporter;
   QString error;
@@ -557,7 +558,6 @@ void MainWindow::onGitCommit() {
     QString hashOutput;
     if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
       editor_->project()->setGitCommitHash(hash);
-
       // Save again so the new hash is written into the .configured file
       editor_->saveProject(editor_->currentFilePath());
     }
@@ -591,4 +591,26 @@ void MainWindow::exportParametersToXml() {
   }
 
   QMessageBox::information(this, "Export", "Parameters exported successfully.");
+}
+
+void MainWindow::refreshProjectGitMetadata() {
+  if (!editor_ || !editor_->project()) {
+    return;
+  }
+
+  auto* project = editor_->project();
+  if (!project->isGitManaged()) {
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    return;
+  }
+
+  QString hash;
+  QString output;
+  if (gitService_.getCommitHash(workingDir, &hash, &output) && !hash.isEmpty()) {
+    project->setGitCommitHash(hash);
+  }
 }

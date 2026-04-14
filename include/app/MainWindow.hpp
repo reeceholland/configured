@@ -30,6 +30,7 @@ class MainWindow : public QMainWindow {
   QString currentProjectWorkingDirectory() const;
   void exportParametersToJson();
   void exportParametersToXml();
+  void refreshProjectGitMetadata();
 
  private slots:
   void onGitInit();

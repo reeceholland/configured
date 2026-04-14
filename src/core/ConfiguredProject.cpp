@@ -1,5 +1,4 @@
 #include "core/ConfiguredProject.hpp"
-#include "core/ConfiguredItem.hpp"
 
 #include <QFile>
 #include <QJsonArray>
@@ -7,25 +6,20 @@
 #include <QJsonObject>
 #include <QSet>
 
-static bool collectParameterKeys(const ConfiguredItem *item,
-                                 QSet<QString> &seen,
-                                 QString *duplicate)
-{
-  if (!item)
-  {
+#include "core/ConfiguredItem.hpp"
+
+static bool collectParameterKeys(const ConfiguredItem* item, QSet<QString>& seen,
+                                 QString* duplicate) {
+  if (!item) {
     return false;
   }
 
-  if (item->isParameter())
-  {
+  if (item->isParameter()) {
     const QString key = item->parameterKey().trimmed();
 
-    if (!key.isEmpty())
-    {
-      if (seen.contains(key))
-      {
-        if (duplicate)
-        {
+    if (!key.isEmpty()) {
+      if (seen.contains(key)) {
+        if (duplicate) {
           *duplicate = key;
         }
         return true;
@@ -34,10 +28,8 @@ static bool collectParameterKeys(const ConfiguredItem *item,
     }
   }
 
-  for (const auto &child : item->children())
-  {
-    if (collectParameterKeys(child.get(), seen, duplicate))
-    {
+  for (const auto& child : item->children()) {
+    if (collectParameterKeys(child.get(), seen, duplicate)) {
       return true;
     }
   }
@@ -55,112 +47,89 @@ ConfiguredProject::ConfiguredProject()
       git_managed_(false),
       gitCommitHash_(""),
       last_modified_(QDateTime::currentDateTime().toString(Qt::ISODate)),
-      root_(std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot))
-{
-}
+      root_(std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot)) {}
 
-const QString &ConfiguredProject::name() const
-{
+const QString& ConfiguredProject::name() const {
   return name_;
 }
 
-void ConfiguredProject::setName(const QString &name)
-{
+void ConfiguredProject::setName(const QString& name) {
   name_ = name;
 }
 
-const QString &ConfiguredProject::description() const
-{
+const QString& ConfiguredProject::description() const {
   return description_;
 }
 
-void ConfiguredProject::setDescription(const QString &description)
-{
+void ConfiguredProject::setDescription(const QString& description) {
   description_ = description;
 }
 
-const QString &ConfiguredProject::author() const
-{
+const QString& ConfiguredProject::author() const {
   return author_;
 }
 
-void ConfiguredProject::setAuthor(const QString &author)
-{
+void ConfiguredProject::setAuthor(const QString& author) {
   author_ = author;
 }
 
-const QString &ConfiguredProject::company() const
-{
+const QString& ConfiguredProject::company() const {
   return company_;
 }
 
-void ConfiguredProject::setCompany(const QString &company)
-{
+void ConfiguredProject::setCompany(const QString& company) {
   company_ = company;
 }
 
-const QString &ConfiguredProject::version() const
-{
+const QString& ConfiguredProject::version() const {
   return version_;
 }
 
-void ConfiguredProject::setVersion(const QString &version)
-{
+void ConfiguredProject::setVersion(const QString& version) {
   version_ = version;
 }
 
-const QString &ConfiguredProject::lastModified() const
-{
+const QString& ConfiguredProject::lastModified() const {
   return last_modified_;
 }
 
-void ConfiguredProject::setLastModified(const QString &lastModified)
-{
+void ConfiguredProject::setLastModified(const QString& lastModified) {
   last_modified_ = lastModified;
 }
 
-const QString &ConfiguredProject::robotPlatform() const
-{
+const QString& ConfiguredProject::robotPlatform() const {
   return robot_platform_;
 }
 
-void ConfiguredProject::setRobotPlatform(const QString &platform)
-{
+void ConfiguredProject::setRobotPlatform(const QString& platform) {
   robot_platform_ = platform;
 }
 
-bool ConfiguredProject::isGitManaged() const
-{
+bool ConfiguredProject::isGitManaged() const {
   return git_managed_;
 }
 
-void ConfiguredProject::setGitManaged(bool managed)
-{
+void ConfiguredProject::setGitManaged(bool managed) {
   git_managed_ = managed;
 }
 
-const QString &ConfiguredProject::gitCommitHash() const
-{
+const QString& ConfiguredProject::gitCommitHash() const {
   return gitCommitHash_;
 }
 
-void ConfiguredProject::setGitCommitHash(const QString &hash)
-{
+void ConfiguredProject::setGitCommitHash(const QString& hash) {
   gitCommitHash_ = hash;
 }
 
-ConfiguredItem *ConfiguredProject::root()
-{
+ConfiguredItem* ConfiguredProject::root() {
   return root_.get();
 }
 
-const ConfiguredItem *ConfiguredProject::root() const
-{
+const ConfiguredItem* ConfiguredProject::root() const {
   return root_.get();
 }
 
-void ConfiguredProject::createSampleProject()
-{
+void ConfiguredProject::createSampleProject() {
   name_ = "Untitled Project";
   description_ = "";
   author_ = "";
@@ -199,7 +168,8 @@ void ConfiguredProject::createSampleProject()
   auto rightMotor = std::make_unique<ConfiguredItem>("Right Motor", ConfiguredItemType::Component);
   rightMotor->setDescription("Right drive motor assembly.");
 
-  auto localisation = std::make_unique<ConfiguredItem>("Localisation", ConfiguredItemType::Subsystem);
+  auto localisation =
+      std::make_unique<ConfiguredItem>("Localisation", ConfiguredItemType::Subsystem);
   localisation->setDescription("Sensors and localisation sources.");
 
   auto imu = std::make_unique<ConfiguredItem>("IMU", ConfiguredItemType::Component);
@@ -226,10 +196,8 @@ void ConfiguredProject::createSampleProject()
   root_->addChild(std::move(safety));
 }
 
-bool ConfiguredProject::saveToFile(const QString &filePath) const
-{
-  if (!root_)
-  {
+bool ConfiguredProject::saveToFile(const QString& filePath) const {
+  if (!root_) {
     return false;
   }
 
@@ -248,8 +216,7 @@ bool ConfiguredProject::saveToFile(const QString &filePath) const
   QJsonDocument doc(rootObj);
 
   QFile file(filePath);
-  if (!file.open(QIODevice::WriteOnly))
-  {
+  if (!file.open(QIODevice::WriteOnly)) {
     return false;
   }
 
@@ -257,26 +224,22 @@ bool ConfiguredProject::saveToFile(const QString &filePath) const
   return true;
 }
 
-bool ConfiguredProject::loadFromFile(const QString &filePath)
-{
+bool ConfiguredProject::loadFromFile(const QString& filePath) {
   QFile file(filePath);
-  if (!file.open(QIODevice::ReadOnly))
-  {
+  if (!file.open(QIODevice::ReadOnly)) {
     return false;
   }
 
   const QByteArray data = file.readAll();
   const QJsonDocument doc = QJsonDocument::fromJson(data);
 
-  if (!doc.isObject())
-  {
+  if (!doc.isObject()) {
     return false;
   }
 
   const QJsonObject obj = doc.object();
 
-  if (!obj.contains("projectName") || !obj.contains("root"))
-  {
+  if (!obj.contains("projectName") || !obj.contains("root")) {
     return false;
   }
 
@@ -290,8 +253,7 @@ bool ConfiguredProject::loadFromFile(const QString &filePath)
   git_managed_ = obj["gitManaged"].toBool();
   const QJsonObject rootObj = obj["root"].toObject();
   auto newRoot = itemFromJson(rootObj);
-  if (!newRoot)
-  {
+  if (!newRoot) {
     return false;
   }
 
@@ -299,29 +261,26 @@ bool ConfiguredProject::loadFromFile(const QString &filePath)
   return true;
 }
 
-QJsonObject ConfiguredProject::itemToJson(const ConfiguredItem *item) const
-{
+QJsonObject ConfiguredProject::itemToJson(const ConfiguredItem* item) const {
   QJsonObject obj;
-  if (!item)
-  {
+  if (!item) {
     return obj;
   }
 
   QString typeString = "Component";
-  switch (item->type())
-  {
-  case ConfiguredItemType::Robot:
-    typeString = "Robot";
-    break;
-  case ConfiguredItemType::Subsystem:
-    typeString = "Subsystem";
-    break;
-  case ConfiguredItemType::Component:
-    typeString = "Component";
-    break;
-  case ConfiguredItemType::Parameter:
-    typeString = "Parameter";
-    break;
+  switch (item->type()) {
+    case ConfiguredItemType::Robot:
+      typeString = "Robot";
+      break;
+    case ConfiguredItemType::Subsystem:
+      typeString = "Subsystem";
+      break;
+    case ConfiguredItemType::Component:
+      typeString = "Component";
+      break;
+    case ConfiguredItemType::Parameter:
+      typeString = "Parameter";
+      break;
   }
 
   obj["name"] = item->name();
@@ -333,8 +292,7 @@ QJsonObject ConfiguredProject::itemToJson(const ConfiguredItem *item) const
   obj["required"] = item->required();
 
   QJsonArray childrenArray;
-  for (const auto &child : item->children())
-  {
+  for (const auto& child : item->children()) {
     childrenArray.append(itemToJson(child.get()));
   }
   obj["children"] = childrenArray;
@@ -342,23 +300,17 @@ QJsonObject ConfiguredProject::itemToJson(const ConfiguredItem *item) const
   return obj;
 }
 
-std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObject &obj)
-{
+std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObject& obj) {
   const QString name = obj["name"].toString("Unnamed Item");
   const QString typeString = obj["type"].toString("Component");
   const QString description = obj["description"].toString();
 
   ConfiguredItemType type = ConfiguredItemType::Component;
-  if (typeString == "Robot")
-  {
+  if (typeString == "Robot") {
     type = ConfiguredItemType::Robot;
-  }
-  else if (typeString == "Subsystem")
-  {
+  } else if (typeString == "Subsystem") {
     type = ConfiguredItemType::Subsystem;
-  }
-  else if (typeString == "Parameter")
-  {
+  } else if (typeString == "Parameter") {
     type = ConfiguredItemType::Parameter;
   }
 
@@ -370,16 +322,13 @@ std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObjec
   item->setRequired(obj["required"].toBool(false));
 
   const QJsonArray childrenArray = obj["children"].toArray();
-  for (const auto &childValue : childrenArray)
-  {
-    if (!childValue.isObject())
-    {
+  for (const auto& childValue : childrenArray) {
+    if (!childValue.isObject()) {
       continue;
     }
 
     auto child = itemFromJson(childValue.toObject());
-    if (child)
-    {
+    if (child) {
       item->addChild(std::move(child));
     }
   }
@@ -387,18 +336,15 @@ std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObjec
   return item;
 }
 
-bool ConfiguredProject::hasDuplicateParameterKeys(QString *duplicateKey) const
-{
+bool ConfiguredProject::hasDuplicateParameterKeys(QString* duplicateKey) const {
   QSet<QString> seen;
   return collectParameterKeys(root_.get(), seen, duplicateKey);
 }
 
-std::vector<ExportParameter> ConfiguredProject::collectParameters() const
-{
+std::vector<ExportParameter> ConfiguredProject::collectParameters() const {
   std::vector<ExportParameter> result;
 
-  if (!root_)
-  {
+  if (!root_) {
     return result;
   }
 
@@ -406,20 +352,16 @@ std::vector<ExportParameter> ConfiguredProject::collectParameters() const
   return result;
 }
 
-void ConfiguredProject::collectParametersRecursive(const ConfiguredItem *item,
-                                                   const QString &parentPath,
-                                                   std::vector<ExportParameter> &out) const
-{
-  if (!item)
-  {
+void ConfiguredProject::collectParametersRecursive(const ConfiguredItem* item,
+                                                   const QString& parentPath,
+                                                   std::vector<ExportParameter>& out) const {
+  if (!item) {
     return;
   }
 
-  const QString currentPath =
-      parentPath.isEmpty() ? item->name() : parentPath + "." + item->name();
+  const QString currentPath = parentPath.isEmpty() ? item->name() : parentPath + "." + item->name();
 
-  if (item->isParameter())
-  {
+  if (item->isParameter()) {
     ExportParameter param;
     param.path = currentPath;
     param.key = item->keyAsString();
@@ -429,8 +371,7 @@ void ConfiguredProject::collectParametersRecursive(const ConfiguredItem *item,
     out.push_back(param);
   }
 
-  for (const auto &child : item->children())
-  {
+  for (const auto& child : item->children()) {
     collectParametersRecursive(child.get(), currentPath, out);
   }
 }

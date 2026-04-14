@@ -28,7 +28,17 @@ bool JsonProjectExporter::exportParameters(const ConfiguredProject& project,
     paramArray.append(obj);
   }
 
+  QJsonObject metadata;
+  metadata["projectName"] = project.name();
+  metadata["lastModified"] = project.lastModified();
+  if (project.isGitManaged()) {
+    metadata["gitCommitHash"] = project.gitCommitHash();
+  } else {
+    metadata["version"] = project.version();
+  }
+
   QJsonObject root;
+  root["metadata"] = metadata;
   root["parameters"] = paramArray;
 
   QJsonDocument doc(root);
