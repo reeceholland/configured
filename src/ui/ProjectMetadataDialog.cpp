@@ -72,7 +72,8 @@ void ProjectMetadataDialog::loadFromProject() {
   versionEdit_->setText(project_->version());
   robotPlatformEdit_->setText(project_->robotPlatform());
   gitManagedCheck_->setChecked(project_->isGitManaged());
-  lastModifiedLabel_->setText(project_->lastModified());
+
+  refreshLastModified();
 
   QString commitHash = "-";
 
@@ -102,6 +103,8 @@ void ProjectMetadataDialog::applyToProject() {
   project_->setVersion(versionEdit_->text().trimmed());
   project_->setRobotPlatform(robotPlatformEdit_->text().trimmed());
   project_->setGitManaged(gitManagedCheck_->isChecked());
+
+  refreshLastModified();
 
   const bool wantsGitManaged = gitManagedCheck_->isChecked();
 
@@ -146,4 +149,11 @@ bool ProjectMetadataDialog::ensureGitRepository() {
   }
 
   return false;
+}
+
+void ProjectMetadataDialog::refreshLastModified() {
+  if (!project_) {
+    return;
+  }
+  lastModifiedLabel_->setText(project_->lastModified());
 }

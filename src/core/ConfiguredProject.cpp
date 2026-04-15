@@ -196,7 +196,7 @@ void ConfiguredProject::createSampleProject() {
   root_->addChild(std::move(safety));
 }
 
-bool ConfiguredProject::saveToFile(const QString& filePath) const {
+bool ConfiguredProject::saveToFile(const QString& filePath) {
   if (!root_) {
     return false;
   }
@@ -207,7 +207,10 @@ bool ConfiguredProject::saveToFile(const QString& filePath) const {
   rootObj["author"] = author_;
   rootObj["company"] = company_;
   rootObj["version"] = version_;
-  rootObj["lastModified"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+
+  setLastModified(QDateTime::currentDateTime().toString(Qt::ISODate));
+
+  rootObj["lastModified"] = last_modified_;
   rootObj["robotPlatform"] = robot_platform_;
   rootObj["gitManaged"] = git_managed_;
   rootObj["gitCommitHash"] = gitCommitHash_;

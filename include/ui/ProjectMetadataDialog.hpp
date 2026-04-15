@@ -20,6 +20,7 @@ class ProjectMetadataDialog : public QDialog {
   void loadFromProject();
   void applyToProject();
   bool ensureGitRepository();
+  void refreshLastModified();
 
  private:
   ConfiguredProject* project_ = nullptr;

@@ -161,15 +161,17 @@ MainWindow::MainWindow() {
   });
 
   connect(saveProjectAction_, &QAction::triggered, this, [this]() {
-    const QString filePath = QFileDialog::getSaveFileName(
-        this, "Save Configured Project", QString(),
-        "Configured Project (*.configured);;JSON Files (*.json);;All Files (*)");
+    QDir dir(currentProjectWorkingDirectory());
+
+    const QString filePath = dir.filePath(editor_->project()->name().trimmed() + ".configured");
 
     if (filePath.isEmpty()) {
       return;
     }
 
-    if (!editor_->saveProject(filePath)) {
+    if (editor_->saveProject(filePath)) {
+      QMessageBox::information(this, "Save Successful", "Project saved successfully.");
+    } else {
       QMessageBox::warning(this, "Save Failed", "Could not save project file.");
       return;
     }
@@ -235,8 +237,6 @@ MainWindow::MainWindow() {
     promptAndCreateProject();
   });
 
-  // connect(gitInitAction_, &QAction::triggered, this, &MainWindow::onGitInit);
-
   connect(gitStatusAction_, &QAction::triggered, this, &MainWindow::onGitStatus);
 
   connect(gitCommitAction_, &QAction::triggered, this, &MainWindow::onGitCommit);
@@ -297,10 +297,6 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
   if (projectMetadataAction_) {
     projectMetadataAction_->setEnabled(enabled);
   }
-
-  // if (gitInitAction_) {
-  //   gitInitAction_->setEnabled(enabled);
-  // }
 
   if (gitStatusAction_) {
     gitStatusAction_->setEnabled(enabled);
