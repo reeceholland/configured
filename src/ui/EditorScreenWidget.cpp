@@ -61,7 +61,7 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   nameEdit_ = new QLineEdit(rightPanel);
 
   typeCombo_ = new QComboBox(rightPanel);
-  typeCombo_->addItems({"Robot", "Subsystem", "Component", "Parameter"});
+  typeCombo_->addItems({"System", "Subsystem", "Component", "Parameter"});
 
   descriptionEdit_ = new QTextEdit(rightPanel);
   descriptionEdit_->setMinimumHeight(120);
@@ -188,7 +188,7 @@ void EditorScreenWidget::addChildToSelected() {
   QString childName = "New Item";
 
   switch (selectedItem_->type()) {
-    case ConfiguredItemType::Robot:
+    case ConfiguredItemType::System:
       childType = ConfiguredItemType::Subsystem;
       childName = "New Subsystem";
       break;
@@ -362,8 +362,8 @@ void EditorScreenWidget::setProjectName(const QString& name) {
 
 QString EditorScreenWidget::typeToString(ConfiguredItemType type) const {
   switch (type) {
-    case ConfiguredItemType::Robot:
-      return "Robot";
+    case ConfiguredItemType::System:
+      return "System";
     case ConfiguredItemType::Subsystem:
       return "Subsystem";
     case ConfiguredItemType::Component:
@@ -376,8 +376,8 @@ QString EditorScreenWidget::typeToString(ConfiguredItemType type) const {
 }
 
 ConfiguredItemType EditorScreenWidget::stringToType(const QString& text) const {
-  if (text == "Robot") {
-    return ConfiguredItemType::Robot;
+  if (text == "System") {
+    return ConfiguredItemType::System;
   }
   if (text == "Subsystem") {
     return ConfiguredItemType::Subsystem;

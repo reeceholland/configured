@@ -12,7 +12,7 @@ It provides a visual interface for defining robot systems, components, and param
 
 * 🧱 **Hierarchical Configuration Editor**
 
-  * Robot → Subsystems → Components → Parameters
+  * System → Subsystems → Components → Parameters
 * 📝 **Parameter Editing**
 
   * Key, value, unit, required flag
@@ -95,8 +95,8 @@ configured/
   "robotPlatform": "Rugged Rover",
   "lastModified": "2026-04-11 10:15:00",
   "root": {
-    "name": "Robot",
-    "type": "Robot",
+    "name": "System",
+    "type": "System",
     "children": [
       {
         "name": "Drivetrain",

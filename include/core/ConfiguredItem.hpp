@@ -20,7 +20,7 @@
  * @brief Represents the type of a configurable item.
  *
  */
-enum class ConfiguredItemType { Robot, Subsystem, Component, Parameter };
+enum class ConfiguredItemType { System, Subsystem, Component, Parameter };
 
 /**
  * @brief Represents the type of a parameter value.
@@ -189,7 +189,7 @@ class ConfiguredItem {
   /// @brief The name of the item.
   QString name_;
 
-  /// @brief The type of the item (Robot, Subsystem, Component, Parameter).
+  /// @brief The type of the item (System, Subsystem, Component, Parameter).
   ConfiguredItemType type_;
 
   /// @brief The description of the item.

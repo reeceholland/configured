@@ -41,7 +41,7 @@ ProjectMetadataDialog::ProjectMetadataDialog(ConfiguredProject* project, const Q
   form->addRow("Company:", companyEdit_);
   form->addRow("Version:", versionEdit_);
   form->addRow("Last Modified:", lastModifiedLabel_);
-  form->addRow("Robot Platform:", robotPlatformEdit_);
+  form->addRow("Platform:", robotPlatformEdit_);
   form->addRow("", gitManagedCheck_);
   form->addRow("Git Commit:", gitCommitLabel_);
 
