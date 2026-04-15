@@ -1,0 +1,13 @@
+/**
+ * @mainpage CONFIGURED
+ *
+ * @section overview Overview
+ * CONFIGURED is a cross-platform Qt application for creating and editing
+ * configuration projects.
+ *
+ * @section features Features
+ * - Project creation and editing
+ * - Git integration
+ * - Help screen support
+ * - JSON / .configured workflows
+ */

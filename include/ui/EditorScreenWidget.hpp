@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "core/ConfiguredItem.hpp"
+#include "core/ConfiguredProject.hpp"
 
 class QTreeWidget;
 class QTreeWidgetItem;

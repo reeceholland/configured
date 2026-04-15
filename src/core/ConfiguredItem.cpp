@@ -8,125 +8,145 @@ ConfiguredItem::ConfiguredItem(const QString &name, ConfiguredItemType type)
 
 const QString &ConfiguredItem::name() const
 {
-    return name_;
+  return name_;
 }
 
 void ConfiguredItem::setName(const QString &name)
 {
-    name_ = name;
+  name_ = name;
 }
 
 ConfiguredItemType ConfiguredItem::type() const
 {
-    return type_;
+  return type_;
 }
 
 void ConfiguredItem::setType(ConfiguredItemType type)
 {
-    type_ = type;
+  type_ = type;
 }
 
 const QString &ConfiguredItem::description() const
 {
-    return description_;
+  return description_;
 }
 
 void ConfiguredItem::setDescription(const QString &description)
 {
-    description_ = description;
+  description_ = description;
 }
 
 const QString &ConfiguredItem::parameterKey() const
 {
-    return parameterKey_;
+  return parameterKey_;
 }
 
 void ConfiguredItem::setParameterKey(const QString &key)
 {
-    parameterKey_ = key;
+  parameterKey_ = key;
 }
 
 const QString &ConfiguredItem::parameterValue() const
 {
-    return parameterValue_;
+  return parameterValue_;
 }
 
 void ConfiguredItem::setParameterValue(const QString &value)
 {
-    parameterValue_ = value;
+  parameterValue_ = value;
 }
 
 const QString &ConfiguredItem::parameterUnit() const
 {
-    return parameterUnit_;
+  return parameterUnit_;
 }
 
 void ConfiguredItem::setParameterUnit(const QString &unit)
 {
-    parameterUnit_ = unit;
+  parameterUnit_ = unit;
 }
 
 bool ConfiguredItem::required() const
 {
-    return required_;
+  return required_;
 }
 
 void ConfiguredItem::setRequired(bool required)
 {
-    required_ = required;
+  required_ = required;
 }
 
 ConfiguredItem *ConfiguredItem::parent()
 {
-    return parent_;
+  return parent_;
 }
 
 const ConfiguredItem *ConfiguredItem::parent() const
 {
-    return parent_;
+  return parent_;
 }
 
 void ConfiguredItem::addChild(std::unique_ptr<ConfiguredItem> child)
 {
-    if (!child)
-    {
-        return;
-    }
+  if (!child)
+  {
+    return;
+  }
 
-    child->parent_ = this;
-    children_.push_back(std::move(child));
+  child->parent_ = this;
+  children_.push_back(std::move(child));
 }
 
 bool ConfiguredItem::removeChild(ConfiguredItem *childToRemove)
 {
-    if (!childToRemove)
-    {
-        return false;
-    }
-
-    for (auto it = children_.begin(); it != children_.end(); ++it)
-    {
-        if (it->get() == childToRemove)
-        {
-            children_.erase(it);
-            return true;
-        }
-    }
-
+  if (!childToRemove)
+  {
     return false;
+  }
+
+  for (auto it = children_.begin(); it != children_.end(); ++it)
+  {
+    if (it->get() == childToRemove)
+    {
+      children_.erase(it);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 std::vector<std::unique_ptr<ConfiguredItem>> &ConfiguredItem::children()
 {
-    return children_;
+  return children_;
 }
 
 const std::vector<std::unique_ptr<ConfiguredItem>> &ConfiguredItem::children() const
 {
-    return children_;
+  return children_;
 }
 
 bool ConfiguredItem::isParameter() const
 {
-    return type_ == ConfiguredItemType::Parameter;
+  return type_ == ConfiguredItemType::Parameter;
+}
+
+QString ConfiguredItem::valueTypeString() const
+{
+  return "string";
+}
+
+QString ConfiguredItem::valueAsString() const
+{
+  return parameterValue_;
+}
+
+QString ConfiguredItem::keyAsString() const
+{
+  return parameterKey_;
+}
+
+QString ConfiguredItem::unitAsString() const
+{
+  return parameterUnit_;
 }

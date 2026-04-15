@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.21)
-project(Configured LANGUAGES CXX VERSION 0.1.0)
+project(Configured LANGUAGES CXX VERSION 0.3.0)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
@@ -42,11 +42,18 @@ add_executable(Configured
     src/ui/HelpScreenWidget.cpp
     include/ui/HelpScreenWidget.hpp
 
+    src/export/XmlProjectExporter.cpp
+    include/export/XmlProjectExporter.hpp
+
+    src/export/JsonProjectExporter.cpp
+    include/export/JsonProjectExporter.hpp
+
     resources/app.qrc
 )
 
 target_include_directories(Configured PRIVATE
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(Configured PRIVATE
@@ -59,3 +66,21 @@ include(CTest)
 enable_testing()
 
 add_subdirectory(tests)
+
+find_package(Doxygen)
+
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_IN  ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+    add_custom_target(doc
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+else()
+    message(STATUS "Doxygen not found, 'doc' target will not be available")
+endif()
