@@ -137,14 +137,6 @@ class MainWindow : public QMainWindow {
  private slots:
 
   /**
-   * @brief Handle the Git initialization action.
-   *
-   * This slot is called when the user triggers the Git initialization action.
-   * It initializes a new Git repository for the current project.
-   */
-  void onGitInit();
-
-  /**
    * @brief Handle the Git status action.
    *
    * This slot is called when the user triggers the Git status action. It retrieves
