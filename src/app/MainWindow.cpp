@@ -1,3 +1,15 @@
+/**
+ * @file MainWindow.cpp
+ * @author Reece Holland
+ * @brief Implementation of the main window of the Configured application.
+ * @version 0.3
+ * @date 2026-04-15
+ *
+ * @copyright Copyright (c) 2026 Reece Holland
+ * License: MIT License (https://opensource.org/licenses/MIT)
+ *
+ */
+
 #include "app/MainWindow.hpp"
 
 #include <QAction>
