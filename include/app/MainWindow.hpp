@@ -224,6 +224,8 @@ class MainWindow : public QMainWindow {
   /// @brief The export action.
   QAction* exportAction_ = nullptr;
 
+  QWidget* lastCentral_ = nullptr;
+
   /// @brief The Git service for handling Git operations.
   GitService gitService_;
 };

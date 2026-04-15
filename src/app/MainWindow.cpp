@@ -132,7 +132,14 @@ MainWindow::MainWindow() {
   });
 
   connect(help_, &HelpScreenWidget::backRequested, this, [this]() {
-    showEditor();
+    QWidget* previous = lastCentral_;
+    lastCentral_ = nullptr;
+
+    if (previous == editor_) {
+      showEditor();
+    } else {
+      showHome();
+    }
   });
 
   connect(versionAction_, &QAction::triggered, this, [this]() {
@@ -237,6 +244,10 @@ MainWindow::MainWindow() {
   connect(exportXmlAction_, &QAction::triggered, this, &MainWindow::exportParametersToXml);
 
   connect(exportJsonAction_, &QAction::triggered, this, &MainWindow::exportParametersToJson);
+
+  connect(home_, &HomeScreenWidget::helpRequested, this, [this]() {
+    showHelp();
+  });
 
   showHome();
   setEditorActionsEnabled(false);
@@ -432,10 +443,11 @@ void MainWindow::updateGitUiVisibility() {
 }
 
 void MainWindow::showHelp() {
-  stack_->setCurrentWidget(help_);
+  lastCentral_ = stack_->currentWidget();
 
+  stack_->setCurrentWidget(help_);
   if (toolbar_) {
-    toolbar_->setVisible(true);
+    toolbar_->setVisible(false);
   }
 }
 

@@ -12,7 +12,6 @@ HomeScreenWidget::HomeScreenWidget(QWidget* parent) : QWidget(parent) {
   rootLayout->setAlignment(Qt::AlignCenter);
   rootLayout->setContentsMargins(40, 40, 40, 40);
 
-
   // Glass card container
   auto* card = new QWidget(this);
   card->setFixedWidth(400);
@@ -25,6 +24,29 @@ HomeScreenWidget::HomeScreenWidget(QWidget* parent) : QWidget(parent) {
   cardLayout->setAlignment(Qt::AlignCenter);
   cardLayout->setSpacing(20);
   cardLayout->setContentsMargins(30, 30, 30, 30);
+
+  auto* topRow = new QVBoxLayout();
+  topRow->setContentsMargins(0, 0, 0, 0);
+  topRow->addStretch();
+
+  helpBtn_ = new QPushButton("?", this);
+  helpBtn_->setFixedSize(30, 30);
+  helpBtn_->setCursor(Qt::PointingHandCursor);
+  helpBtn_->setStyleSheet(R"(
+        QPushButton {
+            background-color: rgba(255, 255, 255, 40);
+            color: white;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+        }
+
+        QPushButton:hover {
+            background-color: rgba(255, 255, 255, 80);
+        }
+    )");
+  topRow->addWidget(helpBtn_);
 
   auto* title = new QLabel("CONFIGURED", card);
   QFont tf = title->font();
@@ -71,6 +93,7 @@ HomeScreenWidget::HomeScreenWidget(QWidget* parent) : QWidget(parent) {
   connect(createNewProjectBtn_, &QPushButton::clicked, this,
           &HomeScreenWidget::createNewProjectRequested);
   connect(openProjectBtn_, &QPushButton::clicked, this, &HomeScreenWidget::openProjectRequested);
+  connect(helpBtn_, &QPushButton::clicked, this, &HomeScreenWidget::helpRequested);
 }
 
 void HomeScreenWidget::paintEvent(QPaintEvent* event) {
