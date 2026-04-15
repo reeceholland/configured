@@ -43,6 +43,7 @@ add_executable(Configured
     include/ui/HelpScreenWidget.hpp
 
     src/export/XmlProjectExporter.cpp
+    include/export/XmlProjectExporter.hpp
 
     src/export/JsonProjectExporter.cpp
     include/export/JsonProjectExporter.hpp
