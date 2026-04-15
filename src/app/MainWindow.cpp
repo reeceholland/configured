@@ -594,6 +594,8 @@ void MainWindow::exportParametersToXml() {
     return;
   }
 
+  refreshProjectGitMetadata();
+
   XmlProjectExporter exporter;
   QString error;
 
