@@ -126,11 +126,6 @@ bool ProjectMetadataDialog::ensureGitRepository() {
     return false;
   }
 
-  if (workingDir_.trimmed().isEmpty()) {
-    QMessageBox::warning(this, "Git", "Please select a directory for the project.");
-    return false;
-  }
-
   if (gitService_->isRepository(workingDir_, &output)) {
     return true;
   }
