@@ -47,7 +47,7 @@ ConfiguredProject::ConfiguredProject()
       git_managed_(false),
       gitCommitHash_(""),
       last_modified_(QDateTime::currentDateTime().toString(Qt::ISODate)),
-      root_(std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot)) {}
+      root_(std::make_unique<ConfiguredItem>("System", ConfiguredItemType::System)) {}
 
 const QString& ConfiguredProject::name() const {
   return name_;
@@ -139,64 +139,11 @@ void ConfiguredProject::createSampleProject() {
   last_modified_ = QDateTime::currentDateTime().toString(Qt::ISODate);
   git_managed_ = false;
 
-  root_ = std::make_unique<ConfiguredItem>("Robot", ConfiguredItemType::Robot);
-  root_->setDescription("Top-level robot configuration.");
-
-  auto drivetrain = std::make_unique<ConfiguredItem>("Drivetrain", ConfiguredItemType::Subsystem);
-  drivetrain->setDescription("Drive motors and motion hardware.");
-
-  auto leftMotor = std::make_unique<ConfiguredItem>("Left Motor", ConfiguredItemType::Component);
-  leftMotor->setDescription("Left drive motor assembly.");
-
-  auto maxRpm = std::make_unique<ConfiguredItem>("Max RPM", ConfiguredItemType::Parameter);
-  maxRpm->setDescription("Maximum revolutions per minute.");
-  maxRpm->setParameterKey("max_rpm");
-  maxRpm->setParameterValue("150");
-  maxRpm->setParameterUnit("rpm");
-  maxRpm->setRequired(true);
-
-  auto gearRatio = std::make_unique<ConfiguredItem>("Gear Ratio", ConfiguredItemType::Parameter);
-  gearRatio->setDescription("Motor gearbox ratio.");
-  gearRatio->setParameterKey("gear_ratio");
-  gearRatio->setParameterValue("30");
-  gearRatio->setParameterUnit(":1");
-  gearRatio->setRequired(false);
-
-  leftMotor->addChild(std::move(maxRpm));
-  leftMotor->addChild(std::move(gearRatio));
-
-  auto rightMotor = std::make_unique<ConfiguredItem>("Right Motor", ConfiguredItemType::Component);
-  rightMotor->setDescription("Right drive motor assembly.");
-
-  auto localisation =
-      std::make_unique<ConfiguredItem>("Localisation", ConfiguredItemType::Subsystem);
-  localisation->setDescription("Sensors and localisation sources.");
-
-  auto imu = std::make_unique<ConfiguredItem>("IMU", ConfiguredItemType::Component);
-  imu->setDescription("Inertial measurement unit.");
-
-  auto imuFrame = std::make_unique<ConfiguredItem>("Frame ID", ConfiguredItemType::Parameter);
-  imuFrame->setDescription("ROS frame ID for the IMU.");
-  imuFrame->setParameterKey("frame_id");
-  imuFrame->setParameterValue("imu_link");
-  imuFrame->setParameterUnit("");
-  imuFrame->setRequired(true);
-
-  imu->addChild(std::move(imuFrame));
-
-  localisation->addChild(std::move(imu));
-  drivetrain->addChild(std::move(leftMotor));
-  drivetrain->addChild(std::move(rightMotor));
-
-  auto safety = std::make_unique<ConfiguredItem>("Safety", ConfiguredItemType::Subsystem);
-  safety->setDescription("Safety-critical functions.");
-
-  root_->addChild(std::move(drivetrain));
-  root_->addChild(std::move(localisation));
-  root_->addChild(std::move(safety));
+  root_ = std::make_unique<ConfiguredItem>("System", ConfiguredItemType::System);
+  root_->setDescription("Top-level system configuration.");
 }
 
-bool ConfiguredProject::saveToFile(const QString& filePath) const {
+bool ConfiguredProject::saveToFile(const QString& filePath) {
   if (!root_) {
     return false;
   }
@@ -207,7 +154,10 @@ bool ConfiguredProject::saveToFile(const QString& filePath) const {
   rootObj["author"] = author_;
   rootObj["company"] = company_;
   rootObj["version"] = version_;
-  rootObj["lastModified"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+
+  setLastModified(QDateTime::currentDateTime().toString(Qt::ISODate));
+
+  rootObj["lastModified"] = last_modified_;
   rootObj["robotPlatform"] = robot_platform_;
   rootObj["gitManaged"] = git_managed_;
   rootObj["gitCommitHash"] = gitCommitHash_;
@@ -269,8 +219,8 @@ QJsonObject ConfiguredProject::itemToJson(const ConfiguredItem* item) const {
 
   QString typeString = "Component";
   switch (item->type()) {
-    case ConfiguredItemType::Robot:
-      typeString = "Robot";
+    case ConfiguredItemType::System:
+      typeString = "System";
       break;
     case ConfiguredItemType::Subsystem:
       typeString = "Subsystem";
@@ -306,8 +256,8 @@ std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObjec
   const QString description = obj["description"].toString();
 
   ConfiguredItemType type = ConfiguredItemType::Component;
-  if (typeString == "Robot") {
-    type = ConfiguredItemType::Robot;
+  if (typeString == "System") {
+    type = ConfiguredItemType::System;
   } else if (typeString == "Subsystem") {
     type = ConfiguredItemType::Subsystem;
   } else if (typeString == "Parameter") {

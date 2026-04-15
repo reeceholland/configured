@@ -18,6 +18,26 @@
 #include "core/ConfiguredItem.hpp"
 #include "core/ConfiguredProject.hpp"
 
+namespace {
+int countParameterKeyOccurrences(const ConfiguredItem* item, const QString& key) {
+  if (!item || key.trimmed().isEmpty()) {
+    return 0;
+  }
+
+  int count = 0;
+
+  if (item->isParameter() && item->parameterKey().trimmed() == key.trimmed()) {
+    ++count;
+  }
+
+  for (const auto& child : item->children()) {
+    count += countParameterKeyOccurrences(child.get(), key);
+  }
+
+  return count;
+}
+}  // namespace
+
 EditorScreenWidget::EditorScreenWidget(QWidget* parent)
     : QWidget(parent), project_(std::make_unique<ConfiguredProject>()) {
   auto* layout = new QHBoxLayout(this);
@@ -41,7 +61,7 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   nameEdit_ = new QLineEdit(rightPanel);
 
   typeCombo_ = new QComboBox(rightPanel);
-  typeCombo_->addItems({"Robot", "Subsystem", "Component", "Parameter"});
+  typeCombo_->addItems({"System", "Subsystem", "Component", "Parameter"});
 
   descriptionEdit_ = new QTextEdit(rightPanel);
   descriptionEdit_->setMinimumHeight(120);
@@ -168,7 +188,7 @@ void EditorScreenWidget::addChildToSelected() {
   QString childName = "New Item";
 
   switch (selectedItem_->type()) {
-    case ConfiguredItemType::Robot:
+    case ConfiguredItemType::System:
       childType = ConfiguredItemType::Subsystem;
       childName = "New Subsystem";
       break;
@@ -297,6 +317,8 @@ void EditorScreenWidget::loadSelectedItemIntoEditor() {
   requiredCheck_->setChecked(selectedItem_->required());
 
   updatingUi_ = false;
+
+  updateParameterValidationUi();
 }
 
 void EditorScreenWidget::applyEditorToSelectedItem() {
@@ -320,14 +342,7 @@ void EditorScreenWidget::applyEditorToSelectedItem() {
     selectedItem_->setRequired(false);
   }
 
-  QString duplicate;
-  if (project_ && project_->hasDuplicateParameterKeys(&duplicate)) {
-    parameterKeyEdit_->setStyleSheet("border: 2px solid red;");
-    QToolTip::showText(parameterKeyEdit_->mapToGlobal(QPoint(0, parameterKeyEdit_->height())),
-                       QString("Duplicate parameter key: '%1'").arg(duplicate), parameterKeyEdit_);
-  } else {
-    parameterKeyEdit_->setStyleSheet("");
-  }
+  updateParameterValidationUi();
 
   parameterPanel_->setVisible(selectedItem_->isParameter());
 
@@ -347,8 +362,8 @@ void EditorScreenWidget::setProjectName(const QString& name) {
 
 QString EditorScreenWidget::typeToString(ConfiguredItemType type) const {
   switch (type) {
-    case ConfiguredItemType::Robot:
-      return "Robot";
+    case ConfiguredItemType::System:
+      return "System";
     case ConfiguredItemType::Subsystem:
       return "Subsystem";
     case ConfiguredItemType::Component:
@@ -361,8 +376,8 @@ QString EditorScreenWidget::typeToString(ConfiguredItemType type) const {
 }
 
 ConfiguredItemType EditorScreenWidget::stringToType(const QString& text) const {
-  if (text == "Robot") {
-    return ConfiguredItemType::Robot;
+  if (text == "System") {
+    return ConfiguredItemType::System;
   }
   if (text == "Subsystem") {
     return ConfiguredItemType::Subsystem;
@@ -387,4 +402,39 @@ QString EditorScreenWidget::currentFilePath() const {
 
 bool EditorScreenWidget::hasProjectFilePath() const {
   return !currentFilePath_.trimmed().isEmpty();
+}
+
+void EditorScreenWidget::updateParameterValidationUi() {
+  if (!selectedItem_ || !selectedItem_->isParameter()) {
+    parameterKeyEdit_->setStyleSheet("");
+    parameterValueEdit_->setStyleSheet("");
+    return;
+  }
+
+  const bool isRequired = selectedItem_->required();
+  const QString currentKey = selectedItem_->parameterKey().trimmed();
+
+  const bool keyMissing = currentKey.isEmpty();
+  const bool valueMissing = selectedItem_->parameterValue().trimmed().isEmpty();
+
+  bool duplicateKey = false;
+  if (project_ && !currentKey.isEmpty() && project_->root()) {
+    duplicateKey = countParameterKeyOccurrences(project_->root(), currentKey) > 1;
+  }
+
+  const bool keyInvalid = (isRequired && keyMissing) || duplicateKey;
+  const bool valueInvalid = isRequired && valueMissing;
+
+  parameterKeyEdit_->setStyleSheet(keyInvalid ? "border: 2px solid red;" : "");
+  parameterValueEdit_->setStyleSheet(valueInvalid ? "border: 2px solid red;" : "");
+
+  if (duplicateKey) {
+    parameterKeyEdit_->setToolTip("This parameter key is duplicated in the project.");
+  } else if (isRequired && keyMissing) {
+    parameterKeyEdit_->setToolTip("Required parameters must have a key.");
+  } else {
+    parameterKeyEdit_->setToolTip("");
+  }
+
+  parameterValueEdit_->setToolTip(valueInvalid ? "Required parameters must have a value." : "");
 }
