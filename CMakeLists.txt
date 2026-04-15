@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.21)
-project(Configured LANGUAGES CXX VERSION 0.1.0)
+project(Configured LANGUAGES CXX VERSION 0.3.0)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
