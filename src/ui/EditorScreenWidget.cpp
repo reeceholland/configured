@@ -18,6 +18,26 @@
 #include "core/ConfiguredItem.hpp"
 #include "core/ConfiguredProject.hpp"
 
+namespace {
+int countParameterKeyOccurrences(const ConfiguredItem* item, const QString& key) {
+  if (!item || key.trimmed().isEmpty()) {
+    return 0;
+  }
+
+  int count = 0;
+
+  if (item->isParameter() && item->parameterKey().trimmed() == key.trimmed()) {
+    ++count;
+  }
+
+  for (const auto& child : item->children()) {
+    count += countParameterKeyOccurrences(child.get(), key);
+  }
+
+  return count;
+}
+}  // namespace
+
 EditorScreenWidget::EditorScreenWidget(QWidget* parent)
     : QWidget(parent), project_(std::make_unique<ConfiguredProject>()) {
   auto* layout = new QHBoxLayout(this);
@@ -297,6 +317,8 @@ void EditorScreenWidget::loadSelectedItemIntoEditor() {
   requiredCheck_->setChecked(selectedItem_->required());
 
   updatingUi_ = false;
+
+  updateParameterValidationUi();
 }
 
 void EditorScreenWidget::applyEditorToSelectedItem() {
@@ -320,14 +342,7 @@ void EditorScreenWidget::applyEditorToSelectedItem() {
     selectedItem_->setRequired(false);
   }
 
-  QString duplicate;
-  if (project_ && project_->hasDuplicateParameterKeys(&duplicate)) {
-    parameterKeyEdit_->setStyleSheet("border: 2px solid red;");
-    QToolTip::showText(parameterKeyEdit_->mapToGlobal(QPoint(0, parameterKeyEdit_->height())),
-                       QString("Duplicate parameter key: '%1'").arg(duplicate), parameterKeyEdit_);
-  } else {
-    parameterKeyEdit_->setStyleSheet("");
-  }
+  updateParameterValidationUi();
 
   parameterPanel_->setVisible(selectedItem_->isParameter());
 
@@ -387,4 +402,39 @@ QString EditorScreenWidget::currentFilePath() const {
 
 bool EditorScreenWidget::hasProjectFilePath() const {
   return !currentFilePath_.trimmed().isEmpty();
+}
+
+void EditorScreenWidget::updateParameterValidationUi() {
+  if (!selectedItem_ || !selectedItem_->isParameter()) {
+    parameterKeyEdit_->setStyleSheet("");
+    parameterValueEdit_->setStyleSheet("");
+    return;
+  }
+
+  const bool isRequired = selectedItem_->required();
+  const QString currentKey = selectedItem_->parameterKey().trimmed();
+
+  const bool keyMissing = currentKey.isEmpty();
+  const bool valueMissing = selectedItem_->parameterValue().trimmed().isEmpty();
+
+  bool duplicateKey = false;
+  if (project_ && !currentKey.isEmpty() && project_->root()) {
+    duplicateKey = countParameterKeyOccurrences(project_->root(), currentKey) > 1;
+  }
+
+  const bool keyInvalid = (isRequired && keyMissing) || duplicateKey;
+  const bool valueInvalid = isRequired && valueMissing;
+
+  parameterKeyEdit_->setStyleSheet(keyInvalid ? "border: 2px solid red;" : "");
+  parameterValueEdit_->setStyleSheet(valueInvalid ? "border: 2px solid red;" : "");
+
+  if (duplicateKey) {
+    parameterKeyEdit_->setToolTip("This parameter key is duplicated in the project.");
+  } else if (isRequired && keyMissing) {
+    parameterKeyEdit_->setToolTip("Required parameters must have a key.");
+  } else {
+    parameterKeyEdit_->setToolTip("");
+  }
+
+  parameterValueEdit_->setToolTip(valueInvalid ? "Required parameters must have a value." : "");
 }

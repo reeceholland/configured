@@ -15,53 +15,54 @@ class QCheckBox;
 class QWidget;
 class ConfiguredProject;
 
-class EditorScreenWidget : public QWidget
-{
-    Q_OBJECT
+class EditorScreenWidget : public QWidget {
+  Q_OBJECT
 
-public:
-    explicit EditorScreenWidget(QWidget *parent = nullptr);
+ public:
+  explicit EditorScreenWidget(QWidget* parent = nullptr);
 
-    void createNewProject();
-    void addChildToSelected();
-    void removeSelectedItem();
+  void createNewProject();
+  void addChildToSelected();
+  void removeSelectedItem();
 
-    void setProjectName(const QString &name);
-    bool saveProject(const QString &filePath);
-    bool loadProject(const QString &filePath);
+  void setProjectName(const QString& name);
+  bool saveProject(const QString& filePath);
+  bool loadProject(const QString& filePath);
 
-    QString currentFilePath() const;
-    bool hasProjectFilePath() const;
+  QString currentFilePath() const;
+  bool hasProjectFilePath() const;
 
-    ConfiguredProject *project();
-    const ConfiguredProject *project() const;
+  void updateParameterValidationUi();
 
-private:
-    QTreeWidget *tree_ = nullptr;
+  ConfiguredProject* project();
+  const ConfiguredProject* project() const;
 
-    QLineEdit *nameEdit_ = nullptr;
-    QComboBox *typeCombo_ = nullptr;
-    QTextEdit *descriptionEdit_ = nullptr;
+ private:
+  QTreeWidget* tree_ = nullptr;
 
-    QWidget *parameterPanel_ = nullptr;
-    QLineEdit *parameterKeyEdit_ = nullptr;
-    QLineEdit *parameterValueEdit_ = nullptr;
-    QLineEdit *parameterUnitEdit_ = nullptr;
-    QCheckBox *requiredCheck_ = nullptr;
+  QLineEdit* nameEdit_ = nullptr;
+  QComboBox* typeCombo_ = nullptr;
+  QTextEdit* descriptionEdit_ = nullptr;
 
-    QString currentFilePath_;
+  QWidget* parameterPanel_ = nullptr;
+  QLineEdit* parameterKeyEdit_ = nullptr;
+  QLineEdit* parameterValueEdit_ = nullptr;
+  QLineEdit* parameterUnitEdit_ = nullptr;
+  QCheckBox* requiredCheck_ = nullptr;
 
-    std::unique_ptr<ConfiguredProject> project_;
-    ConfiguredItem *selectedItem_ = nullptr;
-    bool updatingUi_ = false;
+  QString currentFilePath_;
 
-    void rebuildTree();
-    void addTreeItemRecursive(QTreeWidgetItem *parentItem, ConfiguredItem *item);
+  std::unique_ptr<ConfiguredProject> project_;
+  ConfiguredItem* selectedItem_ = nullptr;
+  bool updatingUi_ = false;
 
-    void onTreeSelectionChanged(QTreeWidgetItem *current);
-    void loadSelectedItemIntoEditor();
-    void applyEditorToSelectedItem();
+  void rebuildTree();
+  void addTreeItemRecursive(QTreeWidgetItem* parentItem, ConfiguredItem* item);
 
-    QString typeToString(ConfiguredItemType type) const;
-    ConfiguredItemType stringToType(const QString &text) const;
+  void onTreeSelectionChanged(QTreeWidgetItem* current);
+  void loadSelectedItemIntoEditor();
+  void applyEditorToSelectedItem();
+
+  QString typeToString(ConfiguredItemType type) const;
+  ConfiguredItemType stringToType(const QString& text) const;
 };
