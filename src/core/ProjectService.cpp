@@ -5,6 +5,7 @@
 
 #include "core/ConfiguredProject.hpp"
 #include "core/GitService.hpp"
+#include "core/ProjectMetadataService.hpp"
 
 ProjectService::ProjectService(GitService* gitService) : gitService_(gitService) {}
 
@@ -19,11 +20,9 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   }
 
   QDir baseDir(baseFolder);
-  if (!baseDir.exists(projectName)) {
-    if (!baseDir.exists()) {
-      result.errorMessage = "Base folder does not exist.";
-      return result;
-    }
+  if (!baseDir.exists()) {
+    result.errorMessage = "Base folder does not exist.";
+    return result;
   }
 
   const QString projectFolderPath = baseDir.filePath(projectName);
@@ -36,13 +35,13 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
 
   auto project = std::make_unique<ConfiguredProject>();
   project->createSampleProject();
-  project->setName(projectName);
-  project->setDescription(metadata.description);
-  project->setAuthor(metadata.author);
-  project->setCompany(metadata.company);
-  project->setVersion(metadata.version);
-  project->setRobotPlatform(metadata.robotPlatform);
-  project->setGitManaged(metadata.gitManaged);
+
+  QString validationError;
+  if (!ProjectMetadataService::validate(metadata, validationError)) {
+    result.errorMessage = "Invalid project metadata: " + validationError;
+    return result;
+  }
+  ProjectMetadataService::apply(*project, metadata);
 
   if (!project->saveToFile(projectFilePath)) {
     result.errorMessage = "Could not save project file.";
@@ -50,22 +49,11 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   }
 
   if (metadata.gitManaged) {
-    if (!gitService_) {
-      result.errorMessage = "Git service not available.";
-      return result;
-    }
-
-    QString output;
-    if (!gitService_->isGitAvailable(&output)) {
-      result.errorMessage = "Git is not available: " + output;
-      return result;
-    }
-
-    if (!gitService_->initRepository(projectFolderPath, &output)) {
-      result.errorMessage = "Failed to initialize Git repository: " + output;
+    if (!ensureGitInitialized(projectFolderPath, result.errorMessage)) {
       return result;
     }
   }
+
   result.success = true;
   result.projectFilePath = projectFilePath;
   result.project = std::move(project);
@@ -77,12 +65,13 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
 bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
                                            const ProjectMetadata& metadata,
                                            const QString& projectFilePath, QString& error) const {
-  project.setName(metadata.name);
-  project.setDescription(metadata.description);
-  project.setAuthor(metadata.author);
-  project.setCompany(metadata.company);
-  project.setVersion(metadata.version);
-  project.setRobotPlatform(metadata.robotPlatform);
+  QString validationError;
+  if (!ProjectMetadataService::validate(metadata, validationError)) {
+    error = "Invalid project metadata: " + validationError;
+    return false;
+  }
+
+  ProjectMetadataService::apply(project, metadata);
 
   const bool wasGitManaged = project.isGitManaged();
   project.setGitManaged(metadata.gitManaged);
@@ -90,21 +79,30 @@ bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
   const QString repoDir = QFileInfo(projectFilePath).absolutePath();
 
   if (!wasGitManaged && metadata.gitManaged) {
-    if (!gitService_) {
-      error = "Git service not available.";
+    if (!ensureGitInitialized(repoDir, error)) {
       return false;
     }
+  }
 
-    QString output;
-    if (!gitService_->isGitAvailable(&output)) {
-      error = "Git is not available.\n\n" + output;
-      return false;
-    }
+  return true;
+}
 
-    if (!gitService_->initRepository(repoDir, &output)) {
-      error = "Failed to initialize Git repository.\n\n" + output;
-      return false;
-    }
+bool ProjectService::ensureGitInitialized(const QString& repoDir, QString& error) const {
+  if (!gitService_) {
+    error = "Git service not available.";
+    return false;
+  }
+
+  QString output;
+
+  if (!gitService_->isGitAvailable(&output)) {
+    error = "Git is not available: " + output;
+    return false;
+  }
+
+  if (!gitService_->initRepository(repoDir, &output)) {
+    error = "Failed to initialize Git repository: " + output;
+    return false;
   }
 
   return true;
