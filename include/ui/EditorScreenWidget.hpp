@@ -37,6 +37,8 @@ class EditorScreenWidget : public QWidget {
   ConfiguredProject* project();
   const ConfiguredProject* project() const;
 
+  void setProject(std::unique_ptr<ConfiguredProject> project, const QString& filePath = QString());
+
  private:
   QTreeWidget* tree_ = nullptr;
 

@@ -438,3 +438,11 @@ void EditorScreenWidget::updateParameterValidationUi() {
 
   parameterValueEdit_->setToolTip(valueInvalid ? "Required parameters must have a value." : "");
 }
+
+void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,
+                                    const QString& filePath) {
+  project_ = std::move(project);
+  currentFilePath_ = filePath;
+  selectedItem_ = nullptr;
+  rebuildTree();
+}
