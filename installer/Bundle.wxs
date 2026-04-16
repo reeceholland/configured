@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Bundle
+    Name="Configured"
+    Manufacturer="Configured"
+    Version="0.3.0.0"
+    UpgradeCode="5faca027-7864-4044-94b8-dfea656c3fee">
+
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication
+        Theme="hyperlinkLicense"
+        LicenseUrl="" />
+    </BootstrapperApplication>
+
+    <util:RegistrySearch
+      Id="VcRedistX64InstalledSearch"
+      Root="HKLM"
+      Key="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
+      Value="Installed"
+      Result="value"
+      Variable="VcRedistX64Installed" />
+
+    <Chain>
+      <ExePackage
+        Id="VcRedistX64"
+        SourceFile="publish\vc_redist.x64.exe"
+        InstallArguments="/install /quiet /norestart"
+        RepairArguments="/repair /quiet /norestart"
+        Permanent="yes"
+        Vital="yes"
+        DetectCondition="VcRedistX64Installed = 1" />
+
+      <MsiPackage
+        Id="ConfiguredMsi"
+        SourceFile="bin\x64\Release\Configured.Setup.msi"
+        Vital="yes" />
+    </Chain>
+  </Bundle>
+</Wix>
