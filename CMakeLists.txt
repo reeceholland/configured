@@ -51,6 +51,9 @@ add_executable(Configured
     src/core/ProjectService.cpp
     include/core/ProjectService.hpp
 
+    src/core/ProjectMetadataService.cpp
+    include/core/ProjectMetadataService.hpp
+
     resources/app.qrc
 )
 

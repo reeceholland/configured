@@ -25,6 +25,8 @@ class ProjectService {
   bool updateProjectMetadata(ConfiguredProject& project, const ProjectMetadata& metadata,
                              const QString& projectFilePath, QString& error) const;
 
+  bool ensureGitInitialized(const QString& repoDir, QString& error) const;
+
  private:
   GitService* gitService_ = nullptr;
 };
