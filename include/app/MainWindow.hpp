@@ -15,6 +15,7 @@
 #include <QMainWindow>
 
 #include "core/GitService.hpp"
+#include "core/ProjectService.hpp"
 
 class QStackedWidget;
 class QAction;
@@ -134,6 +135,15 @@ class MainWindow : public QMainWindow {
    */
   void refreshProjectGitMetadata();
 
+  /**
+   * @brief Edit the metadata of the current project.
+   *
+   * Opens a dialog to allow the user to edit the metadata of the currently
+   * loaded project, such as name, description, author, and Git information. After
+   * the user saves their changes, the project metadata is updated and saved.
+   */
+  void editProjectMetadata();
+
  private slots:
 
   /**
@@ -220,4 +230,6 @@ class MainWindow : public QMainWindow {
 
   /// @brief The Git service for handling Git operations.
   GitService gitService_;
+
+  ProjectService projectService_{&gitService_};
 };

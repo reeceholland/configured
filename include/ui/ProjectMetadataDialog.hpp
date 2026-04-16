@@ -2,6 +2,8 @@
 
 #include <QDialog>
 
+#include "core/ProjectMetadata.hpp"
+
 class QLineEdit;
 class QTextEdit;
 class QLabel;
@@ -13,14 +15,12 @@ class ProjectMetadataDialog : public QDialog {
   Q_OBJECT
 
  public:
-  explicit ProjectMetadataDialog(ConfiguredProject* project, const QString& workingDir,
-                                 GitService* gitService, QWidget* parent = nullptr);
+  explicit ProjectMetadataDialog(const ProjectMetadata& initialValues, QWidget* parent);
+
+  ProjectMetadata metadata() const;
 
  private:
-  void loadFromProject();
-  void applyToProject();
-  bool ensureGitRepository();
-  void refreshLastModified();
+  void loadFromMetadata(const ProjectMetadata& metadata);
 
  private:
   ConfiguredProject* project_ = nullptr;

@@ -198,21 +198,7 @@ MainWindow::MainWindow() {
     }
   });
 
-  connect(projectMetadataAction_, &QAction::triggered, this, [this]() {
-    if (!editor_ || !editor_->project()) {
-      return;
-    }
-
-    refreshProjectGitMetadata();
-
-    ProjectMetadataDialog dialog(editor_->project(), currentProjectWorkingDirectory(), &gitService_,
-                                 this);
-
-    if (dialog.exec() == QDialog::Accepted) {
-      updateWindowTitle();
-      updateGitUiVisibility();
-    }
-  });
+  connect(projectMetadataAction_, &QAction::triggered, this, &MainWindow::editProjectMetadata);
 
   connect(home_, &HomeScreenWidget::openProjectRequested, this, [this]() {
     const QString filePath = QFileDialog::getOpenFileName(
@@ -332,22 +318,19 @@ void MainWindow::updateWindowTitle() {
 }
 
 void MainWindow::promptAndCreateProject() {
-  editor_->createNewProject();
+  ProjectMetadata initial;
+  initial.name = "New Project";
+  initial.gitManaged = false;
 
-  ProjectMetadataDialog dialog(editor_->project(), QString(), &gitService_, this);
-
+  ProjectMetadataDialog dialog(initial, this);
   if (dialog.exec() != QDialog::Accepted) {
     showHome();
     return;
   }
 
-  if (!editor_->project()) {
-    showHome();
-    return;
-  }
+  const ProjectMetadata metadata = dialog.metadata();
 
-  const QString projectName = editor_->project()->name().trimmed();
-  if (projectName.isEmpty()) {
+  if (metadata.name.trimmed().isEmpty()) {
     QMessageBox::warning(this, "New Project", "Project name cannot be empty.");
     showHome();
     return;
@@ -361,37 +344,19 @@ void MainWindow::promptAndCreateProject() {
     return;
   }
 
-  QDir baseDir(baseFolder);
-  const QString projectFolderPath = baseDir.filePath(projectName);
+  ProjectCreationResult result = projectService_.createProject(metadata, baseFolder);
 
-  if (!baseDir.exists(projectName)) {
-    if (!baseDir.mkdir(projectName)) {
-      QMessageBox::warning(this, "Project Creation Failed", "Could not create project folder.");
-      showHome();
-      return;
-    }
-  }
-
-  const QString projectFilePath = QDir(projectFolderPath).filePath(projectName + ".configured");
-
-  if (!editor_->saveProject(projectFilePath)) {
-    QMessageBox::warning(this, "Project Creation Failed", "Could not save project file.");
+  if (!result.success) {
+    QMessageBox::warning(this, "Project Creation Failed", result.errorMessage);
     showHome();
     return;
   }
 
+  editor_->setProject(std::move(result.project), result.projectFilePath);
+
   updateWindowTitle();
   updateGitUiVisibility();
   showEditor();
-}
-
-QString MainWindow::currentProjectWorkingDirectory() const {
-  if (!editor_ || !editor_->hasProjectFilePath()) {
-    return QString();
-  }
-
-  QFileInfo info(editor_->currentFilePath());
-  return info.absolutePath();
 }
 
 void MainWindow::updateGitUiVisibility() {
@@ -578,4 +543,55 @@ void MainWindow::refreshProjectGitMetadata() {
   if (gitService_.getCommitHash(workingDir, &hash, &output) && !hash.isEmpty()) {
     project->setGitCommitHash(hash);
   }
+}
+
+QString MainWindow::currentProjectWorkingDirectory() const {
+  if (!editor_ || !editor_->project()) {
+    return {};
+  }
+
+  const QString filePath = editor_->currentFilePath();
+  if (filePath.isEmpty()) {
+    return {};
+  }
+
+  return QFileInfo(filePath).absolutePath();
+}
+
+void MainWindow::editProjectMetadata() {
+  if (!editor_ || !editor_->project()) {
+    return;
+  }
+
+  refreshProjectGitMetadata();
+
+  // Build initial metadata
+  ProjectMetadata initial;
+  initial.name = editor_->project()->name();
+  initial.description = editor_->project()->description();
+  initial.author = editor_->project()->author();
+  initial.company = editor_->project()->company();
+  initial.version = editor_->project()->version();
+  initial.robotPlatform = editor_->project()->robotPlatform();
+  initial.gitManaged = editor_->project()->isGitManaged();
+  initial.lastModified = editor_->project()->lastModified();
+  initial.gitCommitHash = editor_->project()->gitCommitHash();
+
+  ProjectMetadataDialog dialog(initial, this);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  const ProjectMetadata updated = dialog.metadata();
+
+  QString error;
+  if (!projectService_.updateProjectMetadata(*editor_->project(), updated,
+                                             editor_->currentFilePath(), error)) {
+    QMessageBox::warning(this, "Metadata Update Failed", error);
+    return;
+  }
+
+  updateWindowTitle();
+  updateGitUiVisibility();
 }

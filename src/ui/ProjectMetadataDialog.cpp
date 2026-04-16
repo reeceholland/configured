@@ -12,9 +12,8 @@
 #include "core/ConfiguredProject.hpp"
 #include "core/GitService.hpp"
 
-ProjectMetadataDialog::ProjectMetadataDialog(ConfiguredProject* project, const QString& workingDir,
-                                             GitService* gitService, QWidget* parent)
-    : QDialog(parent), project_(project), workingDir_(workingDir), gitService_(gitService) {
+ProjectMetadataDialog::ProjectMetadataDialog(const ProjectMetadata& initialValues, QWidget* parent)
+    : QDialog(parent) {
   setWindowTitle("Project Metadata");
   resize(500, 400);
 
@@ -50,110 +49,35 @@ ProjectMetadataDialog::ProjectMetadataDialog(ConfiguredProject* project, const Q
   layout->addLayout(form);
   layout->addWidget(buttons);
 
-  loadFromProject();
+  loadFromMetadata(initialValues);
 
-  connect(buttons, &QDialogButtonBox::accepted, this, [this]() {
-    applyToProject();
-    accept();
-  });
-
+  connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
   connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
-void ProjectMetadataDialog::loadFromProject() {
-  if (!project_) {
-    return;
-  }
-
-  nameEdit_->setText(project_->name());
-  descriptionEdit_->setPlainText(project_->description());
-  authorEdit_->setText(project_->author());
-  companyEdit_->setText(project_->company());
-  versionEdit_->setText(project_->version());
-  robotPlatformEdit_->setText(project_->robotPlatform());
-  gitManagedCheck_->setChecked(project_->isGitManaged());
-
-  refreshLastModified();
-
-  QString commitHash = "-";
-
-  if (project_->isGitManaged() && gitService_ && !workingDir_.trimmed().isEmpty()) {
-    QString output;
-    if (gitService_->getCommitHash(workingDir_, &commitHash, &output)) {
-      if (commitHash.trimmed().isEmpty()) {
-        commitHash = "-";
-      }
-    } else {
-      commitHash = "No commits";
-    }
-  }
-
-  gitCommitLabel_->setText(commitHash);
+void ProjectMetadataDialog::loadFromMetadata(const ProjectMetadata& metadata) {
+  nameEdit_->setText(metadata.name);
+  descriptionEdit_->setPlainText(metadata.description);
+  authorEdit_->setText(metadata.author);
+  companyEdit_->setText(metadata.company);
+  versionEdit_->setText(metadata.version);
+  robotPlatformEdit_->setText(metadata.robotPlatform);
+  gitManagedCheck_->setChecked(metadata.gitManaged);
+  lastModifiedLabel_->setText(metadata.lastModified.isEmpty() ? "—" : metadata.lastModified);
+  gitCommitLabel_->setText(metadata.gitCommitHash.isEmpty() ? "—" : metadata.gitCommitHash);
 }
 
-void ProjectMetadataDialog::applyToProject() {
-  if (!project_) {
-    return;
-  }
+ProjectMetadata ProjectMetadataDialog::metadata() const {
+  ProjectMetadata metadata;
+  metadata.name = nameEdit_->text().trimmed();
+  metadata.description = descriptionEdit_->toPlainText().trimmed();
+  metadata.author = authorEdit_->text().trimmed();
+  metadata.company = companyEdit_->text().trimmed();
+  metadata.version = versionEdit_->text().trimmed();
+  metadata.robotPlatform = robotPlatformEdit_->text().trimmed();
+  metadata.gitManaged = gitManagedCheck_->isChecked();
 
-  project_->setName(nameEdit_->text().trimmed());
-  project_->setDescription(descriptionEdit_->toPlainText().trimmed());
-  project_->setAuthor(authorEdit_->text().trimmed());
-  project_->setCompany(companyEdit_->text().trimmed());
-  project_->setVersion(versionEdit_->text().trimmed());
-  project_->setRobotPlatform(robotPlatformEdit_->text().trimmed());
-  project_->setGitManaged(gitManagedCheck_->isChecked());
-
-  refreshLastModified();
-
-  const bool wantsGitManaged = gitManagedCheck_->isChecked();
-
-  if (wantsGitManaged) {
-    if (!ensureGitRepository()) {
-      return;
-    }
-  }
-
-  project_->setGitManaged(wantsGitManaged);
-}
-
-bool ProjectMetadataDialog::ensureGitRepository() {
-  if (!gitService_) {
-    QMessageBox::warning(this, "Git", "Git service is not available.");
-    return false;
-  }
-
-  QString output;
-  if (!gitService_->isGitAvailable(&output)) {
-    QMessageBox::warning(this, "Git", "Git is not available.\n\n" + output);
-    return false;
-  }
-
-  if (gitService_->isRepository(workingDir_, &output)) {
-    return true;
-  }
-
-  QMessageBox::StandardButton reply =
-      QMessageBox::question(this, "Initialize Git Repository",
-                            "The current project is not in a Git repository. Would you like to "
-                            "initialize a new Git repository for this project?",
-                            QMessageBox::Yes | QMessageBox::No);
-
-  if (reply == QMessageBox::Yes) {
-    QString initOutput;
-    if (!gitService_->initRepository(workingDir_, &initOutput)) {
-      QMessageBox::warning(this, "Git Initialization Failed", initOutput);
-      return false;
-    }
-    return true;
-  }
-
-  return false;
-}
-
-void ProjectMetadataDialog::refreshLastModified() {
-  if (!project_) {
-    return;
-  }
-  lastModifiedLabel_->setText(project_->lastModified());
+  metadata.lastModified = lastModifiedLabel_->text();
+  metadata.gitCommitHash = gitCommitLabel_->text();
+  return metadata;
 }

@@ -48,6 +48,9 @@ add_executable(Configured
     src/export/JsonProjectExporter.cpp
     include/export/JsonProjectExporter.hpp
 
+    src/core/ProjectService.cpp
+    include/core/ProjectService.hpp
+
     resources/app.qrc
 )
 
