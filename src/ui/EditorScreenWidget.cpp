@@ -17,6 +17,7 @@
 
 #include "core/ConfiguredItem.hpp"
 #include "core/ConfiguredProject.hpp"
+#include "core/validation/item/ItemValidator.hpp"
 
 namespace {
 int countParameterKeyOccurrences(const ConfiguredItem* item, const QString& key) {
@@ -35,6 +36,17 @@ int countParameterKeyOccurrences(const ConfiguredItem* item, const QString& key)
   }
 
   return count;
+}
+}  // namespace
+
+namespace {
+QString firstErrorForField(const ValidationResult& result, const QString& field) {
+  for (const ValidationMessage& message : result.messages()) {
+    if (message.field == field && message.severity == ValidationSeverity::Error) {
+      return message.message;
+    }
+  }
+  return "";
 }
 }  // namespace
 
@@ -78,10 +90,21 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   parameterUnitEdit_ = new QLineEdit(parameterPanel_);
   requiredCheck_ = new QCheckBox("Required", parameterPanel_);
 
+  parameterKeyErrorLabel_ = new QLabel(this);
+  parameterKeyErrorLabel_->setStyleSheet("color: #ff6b6b;");
+  parameterKeyErrorLabel_->setVisible(false);
+
+  parameterValueErrorLabel_ = new QLabel(this);
+  parameterValueErrorLabel_->setStyleSheet("color: #ff6b6b;");
+  parameterValueErrorLabel_->setVisible(false);
+
   parameterForm->addRow("Parameter Key:", parameterKeyEdit_);
   parameterForm->addRow("Parameter Value:", parameterValueEdit_);
   parameterForm->addRow("Unit:", parameterUnitEdit_);
   parameterForm->addRow("", requiredCheck_);
+
+  parameterForm->addRow("", parameterKeyErrorLabel_);
+  parameterForm->addRow("", parameterValueErrorLabel_);
 
   rightLayout->addWidget(title);
   rightLayout->addLayout(form);
@@ -408,35 +431,46 @@ void EditorScreenWidget::updateParameterValidationUi() {
   if (!selectedItem_ || !selectedItem_->isParameter()) {
     parameterKeyEdit_->setStyleSheet("");
     parameterValueEdit_->setStyleSheet("");
+
+    parameterKeyEdit_->setToolTip("");
+    parameterValueEdit_->setToolTip("");
+
+    parameterKeyErrorLabel_->clear();
+    parameterKeyErrorLabel_->setVisible(false);
+
+    parameterValueErrorLabel_->clear();
+    parameterValueErrorLabel_->setVisible(false);
+
     return;
   }
 
-  const bool isRequired = selectedItem_->required();
-  const QString currentKey = selectedItem_->parameterKey().trimmed();
+  ItemValidationContext context;
+  context.item = selectedItem_;
+  context.project = project_.get();
 
-  const bool keyMissing = currentKey.isEmpty();
-  const bool valueMissing = selectedItem_->parameterValue().trimmed().isEmpty();
+  ItemValidator validator;
+  const ValidationResult result = validator.validate(context);
 
-  bool duplicateKey = false;
-  if (project_ && !currentKey.isEmpty() && project_->root()) {
-    duplicateKey = countParameterKeyOccurrences(project_->root(), currentKey) > 1;
-  }
+  const QString keyError = firstErrorForField(result, "parameterKey");
+  const QString valueError = firstErrorForField(result, "parameterValue");
 
-  const bool keyInvalid = (isRequired && keyMissing) || duplicateKey;
-  const bool valueInvalid = isRequired && valueMissing;
+  const bool keyValid = keyError.isEmpty();
+  const bool valueValid = valueError.isEmpty();
 
-  parameterKeyEdit_->setStyleSheet(keyInvalid ? "border: 2px solid red;" : "");
-  parameterValueEdit_->setStyleSheet(valueInvalid ? "border: 2px solid red;" : "");
+  // Border styling
+  parameterKeyEdit_->setStyleSheet(keyValid ? "" : "border: 2px solid #ff6b6b;");
+  parameterValueEdit_->setStyleSheet(valueValid ? "" : "border: 2px solid #ff6b6b;");
 
-  if (duplicateKey) {
-    parameterKeyEdit_->setToolTip("This parameter key is duplicated in the project.");
-  } else if (isRequired && keyMissing) {
-    parameterKeyEdit_->setToolTip("Required parameters must have a key.");
-  } else {
-    parameterKeyEdit_->setToolTip("");
-  }
+  // Tooltips
+  parameterKeyEdit_->setToolTip(keyError);
+  parameterValueEdit_->setToolTip(valueError);
 
-  parameterValueEdit_->setToolTip(valueInvalid ? "Required parameters must have a value." : "");
+  // Inline labels
+  parameterKeyErrorLabel_->setText(keyError);
+  parameterKeyErrorLabel_->setVisible(!keyValid);
+
+  parameterValueErrorLabel_->setText(valueError);
+  parameterValueErrorLabel_->setVisible(!valueValid);
 }
 
 void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,

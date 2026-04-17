@@ -14,6 +14,7 @@ class QTextEdit;
 class QCheckBox;
 class QWidget;
 class ConfiguredProject;
+class QLabel;
 
 class EditorScreenWidget : public QWidget {
   Q_OBJECT
@@ -67,4 +68,7 @@ class EditorScreenWidget : public QWidget {
 
   QString typeToString(ConfiguredItemType type) const;
   ConfiguredItemType stringToType(const QString& text) const;
+
+  QLabel* parameterKeyErrorLabel_ = nullptr;
+  QLabel* parameterValueErrorLabel_ = nullptr;
 };

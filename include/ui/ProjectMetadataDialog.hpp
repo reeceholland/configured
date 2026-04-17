@@ -8,6 +8,7 @@ class QLineEdit;
 class QTextEdit;
 class QLabel;
 class QCheckBox;
+class QDialogButtonBox;
 class ConfiguredProject;
 class GitService;
 
@@ -21,6 +22,12 @@ class ProjectMetadataDialog : public QDialog {
 
  private:
   void loadFromMetadata(const ProjectMetadata& metadata);
+  void refreshValidationUi();
+  void setFieldValid(QWidget* widget, bool valid);
+  QString firstErrorForField(const class ValidationResult& result, const QString& field) const;
+
+ private slots:
+  void validateAndAccept();
 
  private:
   ConfiguredProject* project_ = nullptr;
@@ -36,4 +43,8 @@ class ProjectMetadataDialog : public QDialog {
   QLineEdit* robotPlatformEdit_ = nullptr;
   QCheckBox* gitManagedCheck_ = nullptr;
   QLabel* gitCommitLabel_ = nullptr;
+
+  QLabel* nameErrorLabel_{nullptr};
+
+  QDialogButtonBox* buttons_{nullptr};
 };

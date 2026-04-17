@@ -6,6 +6,7 @@
 #include "core/ConfiguredProject.hpp"
 #include "core/GitService.hpp"
 #include "core/ProjectMetadataService.hpp"
+#include "core/validation/metadata/ProjectMetadataValidator.hpp"
 
 ProjectService::ProjectService(GitService* gitService) : gitService_(gitService) {}
 
@@ -36,11 +37,14 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   auto project = std::make_unique<ConfiguredProject>();
   project->createSampleProject();
 
-  QString validationError;
-  if (!ProjectMetadataService::validate(metadata, validationError)) {
-    result.errorMessage = "Invalid project metadata: " + validationError;
+  ProjectMetadataValidator validator;
+  const ValidationResult validationResult = validator.validate(metadata);
+
+  if (!validationResult.isValid()) {
+    result.errorMessage = validationResult.messages().first().message;
     return result;
   }
+
   ProjectMetadataService::apply(*project, metadata);
 
   if (!project->saveToFile(projectFilePath)) {
@@ -65,9 +69,11 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
 bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
                                            const ProjectMetadata& metadata,
                                            const QString& projectFilePath, QString& error) const {
-  QString validationError;
-  if (!ProjectMetadataService::validate(metadata, validationError)) {
-    error = "Invalid project metadata: " + validationError;
+  ProjectMetadataValidator validator;
+  const ValidationResult validationResult = validator.validate(metadata);
+
+  if (!validationResult.isValid()) {
+    error = validationResult.messages().first().message;
     return false;
   }
 
