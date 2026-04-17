@@ -71,4 +71,5 @@ class EditorScreenWidget : public QWidget {
 
   QLabel* parameterKeyErrorLabel_ = nullptr;
   QLabel* parameterValueErrorLabel_ = nullptr;
+  QLabel* itemNameErrorLabel_ = nullptr;
 };

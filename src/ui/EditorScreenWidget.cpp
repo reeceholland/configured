@@ -78,7 +78,13 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   descriptionEdit_ = new QTextEdit(rightPanel);
   descriptionEdit_->setMinimumHeight(120);
 
+  itemNameErrorLabel_ = new QLabel(this);
+  itemNameErrorLabel_->setStyleSheet("color: #ff6b6b;");
+  itemNameErrorLabel_->setVisible(false);
+
   form->addRow("Name:", nameEdit_);
+  form->addRow("", itemNameErrorLabel_);
+
   form->addRow("Type:", typeCombo_);
   form->addRow("Description:", descriptionEdit_);
 
@@ -99,13 +105,15 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   parameterValueErrorLabel_->setVisible(false);
 
   parameterForm->addRow("Parameter Key:", parameterKeyEdit_);
+  parameterForm->addRow("", parameterKeyErrorLabel_);
+
   parameterForm->addRow("Parameter Value:", parameterValueEdit_);
+  parameterForm->addRow("", parameterValueErrorLabel_);
+
   parameterForm->addRow("Unit:", parameterUnitEdit_);
   parameterForm->addRow("", requiredCheck_);
 
-  parameterForm->addRow("", parameterKeyErrorLabel_);
-  parameterForm->addRow("", parameterValueErrorLabel_);
-
+  parameterForm->addRow("", itemNameErrorLabel_);
   rightLayout->addWidget(title);
   rightLayout->addLayout(form);
   rightLayout->addWidget(parameterPanel_);
@@ -428,7 +436,12 @@ bool EditorScreenWidget::hasProjectFilePath() const {
 }
 
 void EditorScreenWidget::updateParameterValidationUi() {
-  if (!selectedItem_ || !selectedItem_->isParameter()) {
+  if (!selectedItem_) {
+    nameEdit_->setStyleSheet("");
+    nameEdit_->setToolTip("");
+    itemNameErrorLabel_->clear();
+    itemNameErrorLabel_->setVisible(false);
+
     parameterKeyEdit_->setStyleSheet("");
     parameterValueEdit_->setStyleSheet("");
 
@@ -451,26 +464,47 @@ void EditorScreenWidget::updateParameterValidationUi() {
   ItemValidator validator;
   const ValidationResult result = validator.validate(context);
 
-  const QString keyError = firstErrorForField(result, "parameterKey");
-  const QString valueError = firstErrorForField(result, "parameterValue");
+  // Name should be validated for any selected item
+  const QString nameError = firstErrorForField(result, "name");
+  const bool nameValid = nameError.isEmpty();
 
-  const bool keyValid = keyError.isEmpty();
-  const bool valueValid = valueError.isEmpty();
+  nameEdit_->setStyleSheet(nameValid ? "" : "border: 2px solid #ff6b6b;");
+  nameEdit_->setToolTip(nameError);
+  itemNameErrorLabel_->setText(nameError);
+  itemNameErrorLabel_->setVisible(!nameValid);
 
-  // Border styling
-  parameterKeyEdit_->setStyleSheet(keyValid ? "" : "border: 2px solid #ff6b6b;");
-  parameterValueEdit_->setStyleSheet(valueValid ? "" : "border: 2px solid #ff6b6b;");
+  // Only validate parameter-specific fields for parameters
+  if (selectedItem_->isParameter()) {
+    const QString keyError = firstErrorForField(result, "parameterKey");
+    const QString valueError = firstErrorForField(result, "parameterValue");
 
-  // Tooltips
-  parameterKeyEdit_->setToolTip(keyError);
-  parameterValueEdit_->setToolTip(valueError);
+    const bool keyValid = keyError.isEmpty();
+    const bool valueValid = valueError.isEmpty();
 
-  // Inline labels
-  parameterKeyErrorLabel_->setText(keyError);
-  parameterKeyErrorLabel_->setVisible(!keyValid);
+    parameterKeyEdit_->setStyleSheet(keyValid ? "" : "border: 2px solid #ff6b6b;");
+    parameterValueEdit_->setStyleSheet(valueValid ? "" : "border: 2px solid #ff6b6b;");
 
-  parameterValueErrorLabel_->setText(valueError);
-  parameterValueErrorLabel_->setVisible(!valueValid);
+    parameterKeyEdit_->setToolTip(keyError);
+    parameterValueEdit_->setToolTip(valueError);
+
+    parameterKeyErrorLabel_->setText(keyError);
+    parameterKeyErrorLabel_->setVisible(!keyValid);
+
+    parameterValueErrorLabel_->setText(valueError);
+    parameterValueErrorLabel_->setVisible(!valueValid);
+  } else {
+    parameterKeyEdit_->setStyleSheet("");
+    parameterValueEdit_->setStyleSheet("");
+
+    parameterKeyEdit_->setToolTip("");
+    parameterValueEdit_->setToolTip("");
+
+    parameterKeyErrorLabel_->clear();
+    parameterKeyErrorLabel_->setVisible(false);
+
+    parameterValueErrorLabel_->clear();
+    parameterValueErrorLabel_->setVisible(false);
+  }
 }
 
 void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,

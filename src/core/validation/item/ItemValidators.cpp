@@ -67,3 +67,14 @@ void DuplicateParameterKeyValidator::validate(const ItemValidationContext& conte
                     "This parameter key is duplicated in the project.", "parameterKey");
   }
 }
+
+void FullstopItemNameValidator::validate(const ItemValidationContext& context,
+                                         ValidationResult& result) const {
+  if (!context.item) {
+    return;
+  }
+
+  if (context.item->name().contains('.')) {
+    result.addError("item.name.invalid_chars", "Item name cannot contain full stops.", "name");
+  }
+}

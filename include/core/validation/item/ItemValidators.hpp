@@ -17,3 +17,8 @@ class DuplicateParameterKeyValidator : public IValidator<ItemValidationContext> 
  public:
   void validate(const ItemValidationContext& context, ValidationResult& result) const override;
 };
+
+class FullstopItemNameValidator : public IValidator<ItemValidationContext> {
+ public:
+  void validate(const ItemValidationContext& context, ValidationResult& result) const override;
+};
