@@ -50,6 +50,11 @@ class ConfiguredItem {
                           ConfiguredItemType type = ConfiguredItemType::Component);
 
   /**
+   * @brief Represents the visual state of the item.
+   */
+  enum class VisualState { Normal, Error, Dirty };
+
+  /**
    * @brief Destroy the Configured Item object
    *
    */
@@ -185,6 +190,48 @@ class ConfiguredItem {
    */
   QString unitAsString() const;
 
+  /**
+   * @brief Returns the visual state of the item.
+   *
+   * @return VisualState
+   */
+  VisualState visualState() const;
+
+  /**
+   * @brief Sets the visual state of the item.
+   *
+   * @param state The new visual state to set.
+   */
+  void setVisualState(VisualState state);
+
+  /**
+   * @brief Returns true if the item has an error.
+   *
+   * @return bool
+   */
+  bool hasError() const;
+
+  /**
+   * @brief Sets whether the item has an error.
+   *
+   * @param hasError The new error state to set.
+   */
+  void setHasError(bool hasError);
+
+  /**
+   * @brief Returns true if the item is dirty (has unsaved changes).
+   *
+   * @return bool
+   */
+  bool isDirty() const;
+
+  /**
+   * @brief Sets whether the item is dirty (has unsaved changes).
+   *
+   * @param isDirty The new dirty state to set.
+   */
+  void setIsDirty(bool isDirty);
+
  private:
   /// @brief The name of the item.
   QString name_;
@@ -217,4 +264,8 @@ class ConfiguredItem {
 
   ConfiguredItem* parent_ = nullptr;
   std::vector<std::unique_ptr<ConfiguredItem>> children_;
+
+  VisualState visualState_ = VisualState::Normal;
+  bool hasError_ = false;
+  bool isDirty_ = false;
 };

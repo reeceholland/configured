@@ -1,6 +1,8 @@
 #include "ui/EditorScreenWidget.hpp"
 
+#include <QBrush>
 #include <QCheckBox>
+#include <QColor>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -272,6 +274,7 @@ void EditorScreenWidget::removeSelectedItem() {
 
 void EditorScreenWidget::rebuildTree() {
   tree_->clear();
+  itemToTreeItem_.clear();
 
   if (!project_ || !project_->root()) {
     return;
@@ -281,6 +284,9 @@ void EditorScreenWidget::rebuildTree() {
   rootItem->setText(0, project_->root()->name());
   rootItem->setData(0, Qt::UserRole,
                     QVariant::fromValue(reinterpret_cast<quintptr>(project_->root())));
+  itemToTreeItem_[project_->root()] = rootItem;
+
+  applyTreeItemState(rootItem, project_->root());
 
   for (auto& child : project_->root()->children()) {
     addTreeItemRecursive(rootItem, child.get());
@@ -298,6 +304,9 @@ void EditorScreenWidget::addTreeItemRecursive(QTreeWidgetItem* parentItem, Confi
   auto* treeItem = new QTreeWidgetItem(parentItem);
   treeItem->setText(0, item->name());
   treeItem->setData(0, Qt::UserRole, QVariant::fromValue(reinterpret_cast<quintptr>(item)));
+
+  itemToTreeItem_[item] = treeItem;
+  applyTreeItemState(treeItem, item);
 
   for (auto& child : item->children()) {
     addTreeItemRecursive(treeItem, child.get());
@@ -450,6 +459,9 @@ void EditorScreenWidget::updateParameterValidationUi() {
   ItemValidator validator;
   const ValidationResult result = validator.validate(context);
 
+  selectedItem_->setHasError(!result.isValid());
+  refreshTreeItemState(selectedItem_);
+
   const QString nameError = firstErrorForField(result, "name");
   setValidationState(nameEdit_, itemNameErrorLabel_, nameError);
 
@@ -480,4 +492,40 @@ void EditorScreenWidget::setValidationState(QWidget* field, QLabel* errorLabel,
   field->setToolTip(errorText);
   errorLabel->setText(errorText);
   errorLabel->setVisible(!valid);
+}
+
+void EditorScreenWidget::applyTreeItemState(QTreeWidgetItem* treeItem, const ConfiguredItem* item) {
+  if (!treeItem || !item) {
+    return;
+  }
+
+  switch (item->visualState()) {
+    case ConfiguredItem::VisualState::Error:
+      treeItem->setBackground(0, QBrush(QColor("#ff6b6b")));
+      break;
+    case ConfiguredItem::VisualState::Dirty:
+      treeItem->setBackground(0, QBrush(QColor("#ffb347")));
+      break;
+    case ConfiguredItem::VisualState::Normal:
+    default:
+      treeItem->setBackground(0, QBrush(Qt::NoBrush));
+      break;
+  }
+}
+
+void EditorScreenWidget::refreshTreeItemState(ConfiguredItem* item) {
+  if (!item) {
+    return;
+  }
+
+  if (!item) {
+    return;
+  }
+
+  auto it = itemToTreeItem_.find(item);
+  if (it == itemToTreeItem_.end()) {
+    return;
+  }
+
+  applyTreeItemState(it.value(), item);
 }

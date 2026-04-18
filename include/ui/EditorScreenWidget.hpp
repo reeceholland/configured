@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QWidget>
 #include <memory>
 
@@ -70,7 +71,12 @@ class EditorScreenWidget : public QWidget {
   QString typeToString(ConfiguredItemType type) const;
   ConfiguredItemType stringToType(const QString& text) const;
 
+  void applyTreeItemState(QTreeWidgetItem* treeItem, const ConfiguredItem* item);
+  void refreshTreeItemState(ConfiguredItem* item);
+
   QLabel* parameterKeyErrorLabel_ = nullptr;
   QLabel* parameterValueErrorLabel_ = nullptr;
   QLabel* itemNameErrorLabel_ = nullptr;
+
+  QHash<ConfiguredItem*, QTreeWidgetItem*> itemToTreeItem_;
 };
