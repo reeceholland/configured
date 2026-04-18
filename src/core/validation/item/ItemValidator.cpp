@@ -8,7 +8,7 @@ ValidationResult ItemValidator::validate(const ItemValidationContext& context) c
   RequiredParameterKeyValidator().validate(context, result);
   RequiredParameterValueValidator().validate(context, result);
   DuplicateParameterKeyValidator().validate(context, result);
-  FullstopItemNameValidator().validate(context, result);
+  InvalidItemNameCharactersValidator().validate(context, result);
 
   return result;
 }

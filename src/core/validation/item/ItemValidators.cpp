@@ -1,5 +1,7 @@
 #include "core/validation/item/ItemValidators.hpp"
 
+#include <QRegularExpression>
+
 #include "core/ConfiguredItem.hpp"
 #include "core/ConfiguredProject.hpp"
 
@@ -68,13 +70,21 @@ void DuplicateParameterKeyValidator::validate(const ItemValidationContext& conte
   }
 }
 
-void FullstopItemNameValidator::validate(const ItemValidationContext& context,
-                                         ValidationResult& result) const {
+void InvalidItemNameCharactersValidator::validate(const ItemValidationContext& context,
+                                                  ValidationResult& result) const {
   if (!context.item) {
     return;
   }
 
-  if (context.item->name().contains('.')) {
-    result.addError("item.name.invalid_chars", "Item name cannot contain full stops.", "name");
+  const QString name = context.item->name().trimmed();
+
+  if (name.isEmpty()) {
+    return;
+  }
+
+  static const QRegularExpression allowedPattern("^[A-Za-z0-9_-]+$");
+
+  if (!allowedPattern.match(name).hasMatch()) {
+    result.addError("name", "Name can only contain letters, numbers, '_' and '-'.", "name");
   }
 }

@@ -65,6 +65,7 @@ class EditorScreenWidget : public QWidget {
   void onTreeSelectionChanged(QTreeWidgetItem* current);
   void loadSelectedItemIntoEditor();
   void applyEditorToSelectedItem();
+  void setValidationState(QWidget* field, QLabel* errorLabel, const QString& errorText);
 
   QString typeToString(ConfiguredItemType type) const;
   ConfiguredItemType stringToType(const QString& text) const;

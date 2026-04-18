@@ -437,23 +437,9 @@ bool EditorScreenWidget::hasProjectFilePath() const {
 
 void EditorScreenWidget::updateParameterValidationUi() {
   if (!selectedItem_) {
-    nameEdit_->setStyleSheet("");
-    nameEdit_->setToolTip("");
-    itemNameErrorLabel_->clear();
-    itemNameErrorLabel_->setVisible(false);
-
-    parameterKeyEdit_->setStyleSheet("");
-    parameterValueEdit_->setStyleSheet("");
-
-    parameterKeyEdit_->setToolTip("");
-    parameterValueEdit_->setToolTip("");
-
-    parameterKeyErrorLabel_->clear();
-    parameterKeyErrorLabel_->setVisible(false);
-
-    parameterValueErrorLabel_->clear();
-    parameterValueErrorLabel_->setVisible(false);
-
+    setValidationState(nameEdit_, itemNameErrorLabel_, "");
+    setValidationState(parameterKeyEdit_, parameterKeyErrorLabel_, "");
+    setValidationState(parameterValueEdit_, parameterValueErrorLabel_, "");
     return;
   }
 
@@ -464,46 +450,18 @@ void EditorScreenWidget::updateParameterValidationUi() {
   ItemValidator validator;
   const ValidationResult result = validator.validate(context);
 
-  // Name should be validated for any selected item
   const QString nameError = firstErrorForField(result, "name");
-  const bool nameValid = nameError.isEmpty();
+  setValidationState(nameEdit_, itemNameErrorLabel_, nameError);
 
-  nameEdit_->setStyleSheet(nameValid ? "" : "border: 2px solid #ff6b6b;");
-  nameEdit_->setToolTip(nameError);
-  itemNameErrorLabel_->setText(nameError);
-  itemNameErrorLabel_->setVisible(!nameValid);
-
-  // Only validate parameter-specific fields for parameters
   if (selectedItem_->isParameter()) {
     const QString keyError = firstErrorForField(result, "parameterKey");
     const QString valueError = firstErrorForField(result, "parameterValue");
 
-    const bool keyValid = keyError.isEmpty();
-    const bool valueValid = valueError.isEmpty();
-
-    parameterKeyEdit_->setStyleSheet(keyValid ? "" : "border: 2px solid #ff6b6b;");
-    parameterValueEdit_->setStyleSheet(valueValid ? "" : "border: 2px solid #ff6b6b;");
-
-    parameterKeyEdit_->setToolTip(keyError);
-    parameterValueEdit_->setToolTip(valueError);
-
-    parameterKeyErrorLabel_->setText(keyError);
-    parameterKeyErrorLabel_->setVisible(!keyValid);
-
-    parameterValueErrorLabel_->setText(valueError);
-    parameterValueErrorLabel_->setVisible(!valueValid);
+    setValidationState(parameterKeyEdit_, parameterKeyErrorLabel_, keyError);
+    setValidationState(parameterValueEdit_, parameterValueErrorLabel_, valueError);
   } else {
-    parameterKeyEdit_->setStyleSheet("");
-    parameterValueEdit_->setStyleSheet("");
-
-    parameterKeyEdit_->setToolTip("");
-    parameterValueEdit_->setToolTip("");
-
-    parameterKeyErrorLabel_->clear();
-    parameterKeyErrorLabel_->setVisible(false);
-
-    parameterValueErrorLabel_->clear();
-    parameterValueErrorLabel_->setVisible(false);
+    setValidationState(parameterKeyEdit_, parameterKeyErrorLabel_, "");
+    setValidationState(parameterValueEdit_, parameterValueErrorLabel_, "");
   }
 }
 
@@ -513,4 +471,13 @@ void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,
   currentFilePath_ = filePath;
   selectedItem_ = nullptr;
   rebuildTree();
+}
+
+void EditorScreenWidget::setValidationState(QWidget* field, QLabel* errorLabel,
+                                            const QString& errorText) {
+  const bool valid = errorText.isEmpty();
+  field->setStyleSheet(valid ? "" : "border: 2px solid #ff6b6b;");
+  field->setToolTip(errorText);
+  errorLabel->setText(errorText);
+  errorLabel->setVisible(!valid);
 }
