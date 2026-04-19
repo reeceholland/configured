@@ -7,6 +7,7 @@
 #include "core/GitService.hpp"
 #include "core/ProjectMetadataService.hpp"
 #include "core/validation/metadata/ProjectMetadataValidator.hpp"
+#include "core/validation/project/ProjectValidator.hpp"
 
 ProjectService::ProjectService(GitService* gitService) : gitService_(gitService) {}
 
@@ -77,10 +78,9 @@ bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
     return false;
   }
 
-  ProjectMetadataService::apply(project, metadata);
-
   const bool wasGitManaged = project.isGitManaged();
-  project.setGitManaged(metadata.gitManaged);
+
+  ProjectMetadataService::apply(project, metadata);
 
   const QString repoDir = QFileInfo(projectFilePath).absolutePath();
 
@@ -112,4 +112,52 @@ bool ProjectService::ensureGitInitialized(const QString& repoDir, QString& error
   }
 
   return true;
+}
+
+bool ProjectService::saveProject(ConfiguredProject& project, const QString& projectFilePath,
+                                 QString& error) const {
+  error.clear();
+
+  if (projectFilePath.trimmed().isEmpty()) {
+    error = "Project file path is empty.";
+    return false;
+  }
+
+  const QFileInfo fileInfo(projectFilePath);
+  if (!fileInfo.absoluteDir().exists()) {
+    error = "Project folder does not exist.";
+    return false;
+  }
+
+  const ValidationResult validationResult = ProjectValidator().validate(project);
+  if (!validationResult.isValid()) {
+    error = validationResult.messages().first().message;
+    return false;
+  }
+
+  if (!project.saveToFile(projectFilePath, &error)) {
+    error = error.isEmpty() ? "Could not save project file." : error;
+    return false;
+  }
+
+  return true;
+}
+
+std::unique_ptr<ConfiguredProject> ProjectService::loadProject(const QString& projectFilePath,
+                                                               QString& error) const {
+  error.clear();
+
+  if (projectFilePath.trimmed().isEmpty()) {
+    error = "Project file path is empty.";
+    return nullptr;
+  }
+
+  auto project = std::make_unique<ConfiguredProject>();
+
+  if (!project->loadFromFile(projectFilePath)) {
+    error = "Could not load project file.";
+    return nullptr;
+  }
+
+  return project;
 }

@@ -160,21 +160,19 @@ MainWindow::MainWindow() {
   });
 
   connect(saveProjectAction_, &QAction::triggered, this, [this]() {
-    QDir dir(currentProjectWorkingDirectory());
-
-    const QString filePath = dir.filePath(editor_->project()->name().trimmed() + ".configured");
-
-    if (filePath.isEmpty()) {
+    if (!currentProject_) {
+      QMessageBox::warning(this, "Save Failed", "No project is currently open.");
       return;
     }
 
-    if (editor_->saveProject(filePath)) {
-      QMessageBox::information(this, "Save Successful", "Project saved successfully.");
-    } else {
-      QMessageBox::warning(this, "Save Failed", "Could not save project file.");
+    // MainWindow owns the active project session; ProjectService owns persistence.
+    QString error;
+    if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, error)) {
+      QMessageBox::warning(this, "Save Failed", error);
       return;
     }
 
+    QMessageBox::information(this, "Save Successful", "Project saved successfully.");
     updateWindowTitle();
   });
 
@@ -208,10 +206,19 @@ MainWindow::MainWindow() {
       return;
     }
 
-    if (!editor_->loadProject(filePath)) {
-      QMessageBox::warning(this, "Open Failed", "Could not load project file.");
+    QString error;
+    auto loadedProject = projectService_.loadProject(filePath, error);
+
+    if (!loadedProject) {
+      QMessageBox::warning(this, "Open Failed", error);
       return;
     }
+
+    // Store the loaded project before handing the editor a non-owning pointer.
+    currentProject_ = std::move(loadedProject);
+    currentProjectFilePath_ = filePath;
+
+    editor_->setProject(currentProject_.get());
 
     updateWindowTitle();
     updateGitUiVisibility();
@@ -237,6 +244,8 @@ MainWindow::MainWindow() {
   showHome();
   setEditorActionsEnabled(false);
 }
+
+MainWindow::~MainWindow() = default;
 
 void MainWindow::showHome() {
   stack_->setCurrentWidget(home_);
@@ -305,8 +314,8 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 }
 
 void MainWindow::updateWindowTitle() {
-  if (editor_ && editor_->project()) {
-    const QString name = editor_->project()->name().trimmed();
+  if (currentProject_) {
+    const QString name = currentProject_->name().trimmed();
     if (!name.isEmpty()) {
       setWindowTitle("CONFIGURED - " + name);
       return;
@@ -351,7 +360,11 @@ void MainWindow::promptAndCreateProject() {
     return;
   }
 
-  editor_->setProject(std::move(result.project), result.projectFilePath);
+  // ProjectService creates the project and file; MainWindow owns the active session.
+  currentProject_ = std::move(result.project);
+  currentProjectFilePath_ = result.projectFilePath;
+
+  editor_->setProject(currentProject_.get());
 
   updateWindowTitle();
   updateGitUiVisibility();
@@ -365,8 +378,8 @@ void MainWindow::updateGitUiVisibility() {
 
   bool showGit = false;
 
-  if (editor_ && editor_->project()) {
-    showGit = editor_->project()->isGitManaged();
+  if (currentProject_) {
+    showGit = currentProject_->isGitManaged();
 
     if (showGit) {
       const QString workingDir = currentProjectWorkingDirectory();
@@ -377,6 +390,7 @@ void MainWindow::updateGitUiVisibility() {
       }
     }
   }
+
   if (gitButtonAction_) {
     gitButtonAction_->setVisible(showGit);
   }
@@ -392,14 +406,14 @@ void MainWindow::showHelp() {
 }
 
 void MainWindow::exportParametersToJson() {
-  if (!editor_ || !editor_->project()) {
+  if (!currentProject_) {
     QMessageBox::information(this, "Export", "No project is currently open.");
     return;
   }
 
-  const QString defaultName = editor_->project()->name().trimmed().isEmpty()
+  const QString defaultName = currentProject_->name().trimmed().isEmpty()
                                   ? "parameters.json"
-                                  : editor_->project()->name().trimmed() + "_parameters.json";
+                                  : currentProject_->name().trimmed() + "_parameters.json";
 
   const QString filePath = QFileDialog::getSaveFileName(this, "Export Parameters to JSON",
                                                         defaultName, "JSON Files (*.json)");
@@ -412,7 +426,7 @@ void MainWindow::exportParametersToJson() {
   JsonProjectExporter exporter;
   QString error;
 
-  if (!exporter.exportParameters(*editor_->project(), filePath, &error)) {
+  if (!exporter.exportParameters(*currentProject_, filePath, &error)) {
     QMessageBox::warning(this, "Export Failed", error);
     return;
   }
@@ -465,7 +479,8 @@ void MainWindow::onGitCommit() {
     return;
   }
 
-  if (!editor_->saveProject(editor_->currentFilePath())) {
+  // Save first so the Git commit includes the latest editor state.
+  if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, output)) {
     QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
     return;
   }
@@ -480,27 +495,35 @@ void MainWindow::onGitCommit() {
     return;
   }
 
-  if (editor_->project()) {
+  if (currentProject_) {
     QString hash;
     QString hashOutput;
     if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
-      editor_->project()->setGitCommitHash(hash);
-      // Save again so the new hash is written into the .configured file
-      editor_->saveProject(editor_->currentFilePath());
+      currentProject_->setGitCommitHash(hash);
+
+      // Persist the new commit hash back into the .configured file.
+      QString saveError;
+      if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, saveError)) {
+        QMessageBox::warning(
+            this, "Git Commit",
+            "Commit created, but project file could not be updated:\n" + saveError);
+        return;
+      }
     }
   }
+
   QMessageBox::information(this, "Git Commit", output.isEmpty() ? "Commit created." : output);
 }
 
 void MainWindow::exportParametersToXml() {
-  if (!editor_ || !editor_->project()) {
+  if (!currentProject_) {
     QMessageBox::information(this, "Export", "No project loaded to export.");
     return;
   }
 
-  const QString defaultName = editor_->project()->name().trimmed().isEmpty()
+  const QString defaultName = currentProject_->name().trimmed().isEmpty()
                                   ? "parameters.xml"
-                                  : editor_->project()->name().trimmed() + "_parameters.xml";
+                                  : currentProject_->name().trimmed() + "_parameters.xml";
 
   const QString filePath = QFileDialog::getSaveFileName(this, "Export Parameters to XML",
                                                         defaultName, "XML Files (*.xml)");
@@ -514,7 +537,7 @@ void MainWindow::exportParametersToXml() {
   XmlProjectExporter exporter;
   QString error;
 
-  if (!exporter.exportParameters(*editor_->project(), filePath, &error)) {
+  if (!exporter.exportParameters(*currentProject_, filePath, &error)) {
     QMessageBox::warning(this, "Export Failed", error);
     return;
   }
@@ -523,12 +546,11 @@ void MainWindow::exportParametersToXml() {
 }
 
 void MainWindow::refreshProjectGitMetadata() {
-  if (!editor_ || !editor_->project()) {
+  if (!currentProject_) {
     return;
   }
 
-  auto* project = editor_->project();
-  if (!project->isGitManaged()) {
+  if (!currentProject_->isGitManaged()) {
     return;
   }
 
@@ -540,16 +562,17 @@ void MainWindow::refreshProjectGitMetadata() {
   QString hash;
   QString output;
   if (gitService_.getCommitHash(workingDir, &hash, &output) && !hash.isEmpty()) {
-    project->setGitCommitHash(hash);
+    currentProject_->setGitCommitHash(hash);
   }
 }
 
 QString MainWindow::currentProjectWorkingDirectory() const {
-  if (!editor_ || !editor_->project()) {
+  if (!currentProject_) {
     return {};
   }
 
-  const QString filePath = editor_->currentFilePath();
+  // The folder containing the .configured file is the Git working directory.
+  const QString filePath = currentProjectFilePath_.trimmed();
   if (filePath.isEmpty()) {
     return {};
   }
@@ -558,7 +581,7 @@ QString MainWindow::currentProjectWorkingDirectory() const {
 }
 
 void MainWindow::editProjectMetadata() {
-  if (!editor_ || !editor_->project()) {
+  if (!currentProject_) {
     return;
   }
 
@@ -566,15 +589,15 @@ void MainWindow::editProjectMetadata() {
 
   // Build initial metadata
   ProjectMetadata initial;
-  initial.name = editor_->project()->name();
-  initial.description = editor_->project()->description();
-  initial.author = editor_->project()->author();
-  initial.company = editor_->project()->company();
-  initial.version = editor_->project()->version();
-  initial.robotPlatform = editor_->project()->robotPlatform();
-  initial.gitManaged = editor_->project()->isGitManaged();
-  initial.lastModified = editor_->project()->lastModified();
-  initial.gitCommitHash = editor_->project()->gitCommitHash();
+  initial.name = currentProject_->name();
+  initial.description = currentProject_->description();
+  initial.author = currentProject_->author();
+  initial.company = currentProject_->company();
+  initial.version = currentProject_->version();
+  initial.robotPlatform = currentProject_->robotPlatform();
+  initial.gitManaged = currentProject_->isGitManaged();
+  initial.lastModified = currentProject_->lastModified();
+  initial.gitCommitHash = currentProject_->gitCommitHash();
 
   ProjectMetadataDialog dialog(initial, this);
 
@@ -585,8 +608,13 @@ void MainWindow::editProjectMetadata() {
   const ProjectMetadata updated = dialog.metadata();
 
   QString error;
-  if (!projectService_.updateProjectMetadata(*editor_->project(), updated,
-                                             editor_->currentFilePath(), error)) {
+  if (!projectService_.updateProjectMetadata(*currentProject_, updated,
+                                             currentProjectFilePath_.trimmed(), error)) {
+    QMessageBox::warning(this, "Metadata Update Failed", error);
+    return;
+  }
+
+  if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, error)) {
     QMessageBox::warning(this, "Metadata Update Failed", error);
     return;
   }

@@ -16,9 +16,20 @@ add_executable(ConfiguredTests
     test_configured_item.cpp
     test_configured_project.cpp
     test_validation.cpp
+    test_project_service.cpp
+    test_project_validator.cpp
 
     ../src/core/ConfiguredItem.cpp
     ../src/core/ConfiguredProject.cpp
+    ../src/core/ProjectService.cpp
+    ../src/core/ProjectMetadataService.cpp
+    ../src/core/GitService.cpp
+    ../src/core/validation/ValidationResult.cpp
+    ../src/core/validation/metadata/ProjectMetadataValidator.cpp
+    ../src/core/validation/metadata/ProjectMetadataValidators.cpp
+    ../src/core/validation/item/ItemValidator.cpp
+    ../src/core/validation/item/ItemValidators.cpp
+    ../src/core/validation/project/ProjectValidator.cpp
 )
 
 target_include_directories(ConfiguredTests PRIVATE

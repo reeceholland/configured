@@ -143,8 +143,11 @@ void ConfiguredProject::createSampleProject() {
   root_->setDescription("Top-level system configuration.");
 }
 
-bool ConfiguredProject::saveToFile(const QString& filePath) {
+bool ConfiguredProject::saveToFile(const QString& filePath, QString* error) {
   if (!root_) {
+    if (error) {
+      *error = "Project has no root item.";
+    }
     return false;
   }
 
@@ -167,6 +170,9 @@ bool ConfiguredProject::saveToFile(const QString& filePath) {
 
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly)) {
+    if (error) {
+      *error = file.errorString();
+    }
     return false;
   }
 
@@ -174,9 +180,12 @@ bool ConfiguredProject::saveToFile(const QString& filePath) {
   return true;
 }
 
-bool ConfiguredProject::loadFromFile(const QString& filePath) {
+bool ConfiguredProject::loadFromFile(const QString& filePath, QString* error) {
   QFile file(filePath);
   if (!file.open(QIODevice::ReadOnly)) {
+    if (error) {
+      *error = file.errorString();
+    }
     return false;
   }
 
@@ -184,6 +193,9 @@ bool ConfiguredProject::loadFromFile(const QString& filePath) {
   const QJsonDocument doc = QJsonDocument::fromJson(data);
 
   if (!doc.isObject()) {
+    if (error) {
+      *error = "Invalid JSON format.";
+    }
     return false;
   }
 

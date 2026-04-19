@@ -59,6 +59,7 @@ add_executable(Configured
     src/core/validation/metadata/ProjectMetadataValidators.cpp
     src/core/validation/item/ItemValidator.cpp
     src/core/validation/item/ItemValidators.cpp
+    src/core/validation/project/ProjectValidator.cpp
 
     resources/app.qrc
 )
