@@ -47,6 +47,7 @@ class MainWindow : public QMainWindow {
    * and slots for various actions.
    */
   MainWindow();
+  ~MainWindow() override;
 
  private:
   /**
@@ -232,4 +233,8 @@ class MainWindow : public QMainWindow {
   GitService gitService_;
 
   ProjectService projectService_{&gitService_};
+
+  std::unique_ptr<ConfiguredProject> currentProject_;
+
+  QString currentProjectFilePath_;
 };

@@ -52,8 +52,7 @@ QString firstErrorForField(const ValidationResult& result, const QString& field)
 }
 }  // namespace
 
-EditorScreenWidget::EditorScreenWidget(QWidget* parent)
-    : QWidget(parent), project_(std::make_unique<ConfiguredProject>()) {
+EditorScreenWidget::EditorScreenWidget(QWidget* parent) : QWidget(parent) {
   auto* layout = new QHBoxLayout(this);
 
   auto* splitter = new QSplitter(this);
@@ -159,57 +158,6 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   connect(requiredCheck_, &QCheckBox::toggled, this, [this](bool) {
     applyEditorToSelectedItem();
   });
-  createNewProject();
-}
-
-void EditorScreenWidget::createNewProject() {
-  project_ = std::make_unique<ConfiguredProject>();
-  project_->createSampleProject();
-  currentFilePath_.clear();
-  selectedItem_ = nullptr;
-  rebuildTree();
-}
-
-bool EditorScreenWidget::saveProject(const QString& filePath) {
-  if (!project_) {
-    return false;
-  }
-
-  QString duplicate;
-  if (project_->hasDuplicateParameterKeys(&duplicate)) {
-    QMessageBox::warning(
-        this, "Save Failed",
-        QString("Cannot save project. Duplicate parameter key: '%1'").arg(duplicate));
-    return false;
-  }
-
-  if (requiredCheck_->isChecked()
-      && (parameterKeyEdit_->text().trimmed().isEmpty()
-          || parameterValueEdit_->text().trimmed().isEmpty())) {
-    QMessageBox::warning(this, "Save Failed",
-                         "Cannot save project. Required parameters must have a key and value.");
-    return false;
-  }
-
-  const bool ok = project_->saveToFile(filePath);
-  if (ok) {
-    currentFilePath_ = filePath;
-  }
-
-  return ok;
-}
-
-bool EditorScreenWidget::loadProject(const QString& filePath) {
-  auto loadedProject = std::make_unique<ConfiguredProject>();
-  if (!loadedProject->loadFromFile(filePath)) {
-    return false;
-  }
-
-  project_ = std::move(loadedProject);
-  currentFilePath_ = filePath;
-  selectedItem_ = nullptr;
-  rebuildTree();
-  return true;
 }
 
 void EditorScreenWidget::addChildToSelected() {
@@ -429,19 +377,11 @@ ConfiguredItemType EditorScreenWidget::stringToType(const QString& text) const {
 }
 
 ConfiguredProject* EditorScreenWidget::project() {
-  return project_.get();
+  return project_;
 }
 
 const ConfiguredProject* EditorScreenWidget::project() const {
-  return project_.get();
-}
-
-QString EditorScreenWidget::currentFilePath() const {
-  return currentFilePath_;
-}
-
-bool EditorScreenWidget::hasProjectFilePath() const {
-  return !currentFilePath_.trimmed().isEmpty();
+  return project_;
 }
 
 void EditorScreenWidget::updateParameterValidationUi() {
@@ -454,7 +394,7 @@ void EditorScreenWidget::updateParameterValidationUi() {
 
   ItemValidationContext context;
   context.item = selectedItem_;
-  context.project = project_.get();
+  context.project = project_;
 
   ItemValidator validator;
   const ValidationResult result = validator.validate(context);
@@ -477,11 +417,10 @@ void EditorScreenWidget::updateParameterValidationUi() {
   }
 }
 
-void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,
-                                    const QString& filePath) {
-  project_ = std::move(project);
-  currentFilePath_ = filePath;
+void EditorScreenWidget::setProject(ConfiguredProject* project) {
+  project_ = project;
   selectedItem_ = nullptr;
+  itemToTreeItem_.clear();
   rebuildTree();
 }
 

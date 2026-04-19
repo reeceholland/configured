@@ -23,23 +23,17 @@ class EditorScreenWidget : public QWidget {
  public:
   explicit EditorScreenWidget(QWidget* parent = nullptr);
 
-  void createNewProject();
-  void addChildToSelected();
-  void removeSelectedItem();
-
-  void setProjectName(const QString& name);
-  bool saveProject(const QString& filePath);
-  bool loadProject(const QString& filePath);
-
-  QString currentFilePath() const;
-  bool hasProjectFilePath() const;
-
-  void updateParameterValidationUi();
+  void setProject(ConfiguredProject* project);
 
   ConfiguredProject* project();
   const ConfiguredProject* project() const;
 
-  void setProject(std::unique_ptr<ConfiguredProject> project, const QString& filePath = QString());
+  void addChildToSelected();
+  void removeSelectedItem();
+
+  void setProjectName(const QString& name);
+
+  void updateParameterValidationUi();
 
  private:
   QTreeWidget* tree_ = nullptr;
@@ -54,9 +48,7 @@ class EditorScreenWidget : public QWidget {
   QLineEdit* parameterUnitEdit_ = nullptr;
   QCheckBox* requiredCheck_ = nullptr;
 
-  QString currentFilePath_;
-
-  std::unique_ptr<ConfiguredProject> project_;
+  ConfiguredProject* project_ = nullptr;
   ConfiguredItem* selectedItem_ = nullptr;
   bool updatingUi_ = false;
 

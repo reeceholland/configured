@@ -27,6 +27,12 @@ class ProjectService {
 
   bool ensureGitInitialized(const QString& repoDir, QString& error) const;
 
+  bool saveProject(ConfiguredProject& project, const QString& projectFilePath,
+                   QString& error) const;
+
+  std::unique_ptr<ConfiguredProject> loadProject(const QString& projectFilePath,
+                                                 QString& error) const;
+
  private:
   GitService* gitService_ = nullptr;
 };

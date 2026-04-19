@@ -43,8 +43,8 @@ class ConfiguredProject {
 
   void createSampleProject();
 
-  bool saveToFile(const QString& filePath);
-  bool loadFromFile(const QString& filePath);
+  bool saveToFile(const QString& filePath, QString* error = nullptr);
+  bool loadFromFile(const QString& filePath, QString* error = nullptr);
 
   bool hasDuplicateParameterKeys(QString* duplicateKey = nullptr) const;
 
