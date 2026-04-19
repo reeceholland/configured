@@ -14,7 +14,13 @@
       "command": "cmake --build out/build/x64-debug --target doc",
       "problemMatcher": [],
       "group": "build"
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "ctest --test-dir out/build/x64-debug --output-on-failure",
+      "problemMatcher": [],
+      "group": "test"
     }
-
   ]
 }

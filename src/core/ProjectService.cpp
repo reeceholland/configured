@@ -78,10 +78,9 @@ bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
     return false;
   }
 
-  ProjectMetadataService::apply(project, metadata);
-
   const bool wasGitManaged = project.isGitManaged();
-  project.setGitManaged(metadata.gitManaged);
+
+  ProjectMetadataService::apply(project, metadata);
 
   const QString repoDir = QFileInfo(projectFilePath).absolutePath();
 
@@ -136,8 +135,8 @@ bool ProjectService::saveProject(ConfiguredProject& project, const QString& proj
     return false;
   }
 
-  if (!project.saveToFile(projectFilePath)) {
-    error = "Could not save project file.";
+  if (!project.saveToFile(projectFilePath, &error)) {
+    error = error.isEmpty() ? "Could not save project file." : error;
     return false;
   }
 

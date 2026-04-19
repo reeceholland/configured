@@ -165,6 +165,7 @@ MainWindow::MainWindow() {
       return;
     }
 
+    // MainWindow owns the active project session; ProjectService owns persistence.
     QString error;
     if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, error)) {
       QMessageBox::warning(this, "Save Failed", error);
@@ -213,6 +214,7 @@ MainWindow::MainWindow() {
       return;
     }
 
+    // Store the loaded project before handing the editor a non-owning pointer.
     currentProject_ = std::move(loadedProject);
     currentProjectFilePath_ = filePath;
 
@@ -358,6 +360,7 @@ void MainWindow::promptAndCreateProject() {
     return;
   }
 
+  // ProjectService creates the project and file; MainWindow owns the active session.
   currentProject_ = std::move(result.project);
   currentProjectFilePath_ = result.projectFilePath;
 
@@ -476,6 +479,7 @@ void MainWindow::onGitCommit() {
     return;
   }
 
+  // Save first so the Git commit includes the latest editor state.
   if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, output)) {
     QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
     return;
@@ -497,8 +501,14 @@ void MainWindow::onGitCommit() {
     if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
       currentProject_->setGitCommitHash(hash);
 
+      // Persist the new commit hash back into the .configured file.
       QString saveError;
-      projectService_.saveProject(*currentProject_, currentProjectFilePath_, saveError);
+      if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, saveError)) {
+        QMessageBox::warning(
+            this, "Git Commit",
+            "Commit created, but project file could not be updated:\n" + saveError);
+        return;
+      }
     }
   }
 
@@ -561,6 +571,7 @@ QString MainWindow::currentProjectWorkingDirectory() const {
     return {};
   }
 
+  // The folder containing the .configured file is the Git working directory.
   const QString filePath = currentProjectFilePath_.trimmed();
   if (filePath.isEmpty()) {
     return {};
@@ -599,6 +610,11 @@ void MainWindow::editProjectMetadata() {
   QString error;
   if (!projectService_.updateProjectMetadata(*currentProject_, updated,
                                              currentProjectFilePath_.trimmed(), error)) {
+    QMessageBox::warning(this, "Metadata Update Failed", error);
+    return;
+  }
+
+  if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, error)) {
     QMessageBox::warning(this, "Metadata Update Failed", error);
     return;
   }
