@@ -57,6 +57,12 @@ add_executable(Configured
     src/ui/RemoteConnectDialog.cpp
     include/ui/RemoteConnectDialog.hpp
 
+    src/ui/ConnectingDialog.cpp
+    include/ui/ConnectingDialog.hpp
+
+    src/core/CloneWorker.cpp
+    include/core/CloneWorker.hpp
+
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp
     src/core/validation/metadata/ProjectMetadataValidators.cpp
