@@ -14,6 +14,7 @@ class HomeScreenWidget : public QWidget {
  signals:
   void createNewProjectRequested();
   void openProjectRequested();
+  void connectRemoteRequested();
   void helpRequested();
 
  protected:
@@ -22,6 +23,7 @@ class HomeScreenWidget : public QWidget {
  private:
   QPushButton* createNewProjectBtn_ = nullptr;
   QPushButton* openProjectBtn_ = nullptr;
+  QPushButton* connectRemoteBtn_ = nullptr;
   QPushButton* helpBtn_ = nullptr;
   QPixmap background_;
 };

@@ -54,6 +54,9 @@ add_executable(Configured
     src/core/ProjectMetadataService.cpp
     include/core/ProjectMetadataService.hpp
 
+    src/ui/RemoteConnectDialog.cpp
+    include/ui/RemoteConnectDialog.hpp
+
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp
     src/core/validation/metadata/ProjectMetadataValidators.cpp

@@ -82,17 +82,24 @@ HomeScreenWidget::HomeScreenWidget(QWidget* parent) : QWidget(parent) {
   openProjectBtn_->setFixedSize(200, 40);
   openProjectBtn_->setStyleSheet(buttonStyle);
 
+  connectRemoteBtn_ = new QPushButton("Connect", card);
+  connectRemoteBtn_->setFixedSize(200, 40);
+  connectRemoteBtn_->setStyleSheet(buttonStyle);
+
   cardLayout->addWidget(title);
   cardLayout->addWidget(subtitle);
   cardLayout->addSpacing(20);
   cardLayout->addWidget(createNewProjectBtn_, 0, Qt::AlignCenter);
   cardLayout->addWidget(openProjectBtn_, 0, Qt::AlignCenter);
+  cardLayout->addWidget(connectRemoteBtn_, 0, Qt::AlignCenter);
 
   rootLayout->addWidget(card, 0, Qt::AlignCenter);
 
   connect(createNewProjectBtn_, &QPushButton::clicked, this,
           &HomeScreenWidget::createNewProjectRequested);
   connect(openProjectBtn_, &QPushButton::clicked, this, &HomeScreenWidget::openProjectRequested);
+  connect(connectRemoteBtn_, &QPushButton::clicked, this,
+          &HomeScreenWidget::connectRemoteRequested);
   connect(helpBtn_, &QPushButton::clicked, this, &HomeScreenWidget::helpRequested);
 }
 

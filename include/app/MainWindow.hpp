@@ -145,6 +145,10 @@ class MainWindow : public QMainWindow {
    */
   void editProjectMetadata();
 
+  void promptAndCloneRemoteProject();
+
+  QString findConfiguredFile(const QString& folderPath) const;
+
  private slots:
 
   /**

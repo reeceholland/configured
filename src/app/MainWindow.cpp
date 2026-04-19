@@ -32,6 +32,7 @@
 #include "ui/HelpScreenWidget.hpp"
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
+#include "ui/RemoteConnectDialog.hpp"
 
 MainWindow::MainWindow() {
   setWindowTitle("CONFIGURED");
@@ -239,6 +240,10 @@ MainWindow::MainWindow() {
 
   connect(home_, &HomeScreenWidget::helpRequested, this, [this]() {
     showHelp();
+  });
+
+  connect(home_, &HomeScreenWidget::connectRemoteRequested, this, [this]() {
+    promptAndCloneRemoteProject();
   });
 
   showHome();
@@ -621,4 +626,60 @@ void MainWindow::editProjectMetadata() {
 
   updateWindowTitle();
   updateGitUiVisibility();
+}
+
+void MainWindow::promptAndCloneRemoteProject() {
+  RemoteConnectDialog dialog(this);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isGitAvailable(&output)) {
+    QMessageBox::warning(this, "Connect Remote", "Git is not available.\n\n" + output);
+    return;
+  }
+
+  QString clonedPath;
+  if (!gitService_.cloneRepository(dialog.remoteUrl(), dialog.parentFolder(), &clonedPath,
+                                   &output)) {
+    QMessageBox::warning(this, "Connect Remote", "Repository could not be cloned.\n\n" + output);
+    return;
+  }
+
+  const QString projectFilePath = findConfiguredFile(clonedPath);
+  if (projectFilePath.isEmpty()) {
+    QMessageBox::warning(this, "Connect Remote",
+                         "Repository cloned, but no .configured file was found.");
+    return;
+  }
+
+  QString error;
+  auto loadedProject = projectService_.loadProject(projectFilePath, error);
+
+  if (!loadedProject) {
+    QMessageBox::warning(this, "Open Failed", error);
+    return;
+  }
+
+  currentProject_ = std::move(loadedProject);
+  currentProjectFilePath_ = projectFilePath;
+
+  editor_->setProject(currentProject_.get());
+
+  updateWindowTitle();
+  updateGitUiVisibility();
+  showEditor();
+}
+
+QString MainWindow::findConfiguredFile(const QString& folderPath) const {
+  QDir dir(folderPath);
+  const QStringList files = dir.entryList({"*.configured"}, QDir::Files);
+
+  if (files.size() == 1) {
+    return dir.filePath(files.first());
+  }
+
+  return {};
 }
