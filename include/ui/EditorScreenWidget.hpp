@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QWidget>
 #include <memory>
 
@@ -14,6 +15,7 @@ class QTextEdit;
 class QCheckBox;
 class QWidget;
 class ConfiguredProject;
+class QLabel;
 
 class EditorScreenWidget : public QWidget {
   Q_OBJECT
@@ -64,7 +66,17 @@ class EditorScreenWidget : public QWidget {
   void onTreeSelectionChanged(QTreeWidgetItem* current);
   void loadSelectedItemIntoEditor();
   void applyEditorToSelectedItem();
+  void setValidationState(QWidget* field, QLabel* errorLabel, const QString& errorText);
 
   QString typeToString(ConfiguredItemType type) const;
   ConfiguredItemType stringToType(const QString& text) const;
+
+  void applyTreeItemState(QTreeWidgetItem* treeItem, const ConfiguredItem* item);
+  void refreshTreeItemState(ConfiguredItem* item);
+
+  QLabel* parameterKeyErrorLabel_ = nullptr;
+  QLabel* parameterValueErrorLabel_ = nullptr;
+  QLabel* itemNameErrorLabel_ = nullptr;
+
+  QHash<ConfiguredItem*, QTreeWidgetItem*> itemToTreeItem_;
 };

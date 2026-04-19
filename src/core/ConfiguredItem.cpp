@@ -1,95 +1,74 @@
 #include "core/ConfiguredItem.hpp"
 
-ConfiguredItem::ConfiguredItem(const QString &name, ConfiguredItemType type)
-    : name_(name),
-      type_(type)
-{
-}
+ConfiguredItem::ConfiguredItem(const QString& name, ConfiguredItemType type)
+    : name_(name), type_(type) {}
 
-const QString &ConfiguredItem::name() const
-{
+const QString& ConfiguredItem::name() const {
   return name_;
 }
 
-void ConfiguredItem::setName(const QString &name)
-{
+void ConfiguredItem::setName(const QString& name) {
   name_ = name;
 }
 
-ConfiguredItemType ConfiguredItem::type() const
-{
+ConfiguredItemType ConfiguredItem::type() const {
   return type_;
 }
 
-void ConfiguredItem::setType(ConfiguredItemType type)
-{
+void ConfiguredItem::setType(ConfiguredItemType type) {
   type_ = type;
 }
 
-const QString &ConfiguredItem::description() const
-{
+const QString& ConfiguredItem::description() const {
   return description_;
 }
 
-void ConfiguredItem::setDescription(const QString &description)
-{
+void ConfiguredItem::setDescription(const QString& description) {
   description_ = description;
 }
 
-const QString &ConfiguredItem::parameterKey() const
-{
+const QString& ConfiguredItem::parameterKey() const {
   return parameterKey_;
 }
 
-void ConfiguredItem::setParameterKey(const QString &key)
-{
+void ConfiguredItem::setParameterKey(const QString& key) {
   parameterKey_ = key;
 }
 
-const QString &ConfiguredItem::parameterValue() const
-{
+const QString& ConfiguredItem::parameterValue() const {
   return parameterValue_;
 }
 
-void ConfiguredItem::setParameterValue(const QString &value)
-{
+void ConfiguredItem::setParameterValue(const QString& value) {
   parameterValue_ = value;
 }
 
-const QString &ConfiguredItem::parameterUnit() const
-{
+const QString& ConfiguredItem::parameterUnit() const {
   return parameterUnit_;
 }
 
-void ConfiguredItem::setParameterUnit(const QString &unit)
-{
+void ConfiguredItem::setParameterUnit(const QString& unit) {
   parameterUnit_ = unit;
 }
 
-bool ConfiguredItem::required() const
-{
+bool ConfiguredItem::required() const {
   return required_;
 }
 
-void ConfiguredItem::setRequired(bool required)
-{
+void ConfiguredItem::setRequired(bool required) {
   required_ = required;
 }
 
-ConfiguredItem *ConfiguredItem::parent()
-{
+ConfiguredItem* ConfiguredItem::parent() {
   return parent_;
 }
 
-const ConfiguredItem *ConfiguredItem::parent() const
-{
+const ConfiguredItem* ConfiguredItem::parent() const {
   return parent_;
 }
 
-void ConfiguredItem::addChild(std::unique_ptr<ConfiguredItem> child)
-{
-  if (!child)
-  {
+void ConfiguredItem::addChild(std::unique_ptr<ConfiguredItem> child) {
+  if (!child) {
     return;
   }
 
@@ -97,17 +76,13 @@ void ConfiguredItem::addChild(std::unique_ptr<ConfiguredItem> child)
   children_.push_back(std::move(child));
 }
 
-bool ConfiguredItem::removeChild(ConfiguredItem *childToRemove)
-{
-  if (!childToRemove)
-  {
+bool ConfiguredItem::removeChild(ConfiguredItem* childToRemove) {
+  if (!childToRemove) {
     return false;
   }
 
-  for (auto it = children_.begin(); it != children_.end(); ++it)
-  {
-    if (it->get() == childToRemove)
-    {
+  for (auto it = children_.begin(); it != children_.end(); ++it) {
+    if (it->get() == childToRemove) {
       children_.erase(it);
       return true;
     }
@@ -116,37 +91,60 @@ bool ConfiguredItem::removeChild(ConfiguredItem *childToRemove)
   return false;
 }
 
-std::vector<std::unique_ptr<ConfiguredItem>> &ConfiguredItem::children()
-{
+std::vector<std::unique_ptr<ConfiguredItem>>& ConfiguredItem::children() {
   return children_;
 }
 
-const std::vector<std::unique_ptr<ConfiguredItem>> &ConfiguredItem::children() const
-{
+const std::vector<std::unique_ptr<ConfiguredItem>>& ConfiguredItem::children() const {
   return children_;
 }
 
-bool ConfiguredItem::isParameter() const
-{
+bool ConfiguredItem::isParameter() const {
   return type_ == ConfiguredItemType::Parameter;
 }
 
-QString ConfiguredItem::valueTypeString() const
-{
+QString ConfiguredItem::valueTypeString() const {
   return "string";
 }
 
-QString ConfiguredItem::valueAsString() const
-{
+QString ConfiguredItem::valueAsString() const {
   return parameterValue_;
 }
 
-QString ConfiguredItem::keyAsString() const
-{
+QString ConfiguredItem::keyAsString() const {
   return parameterKey_;
 }
 
-QString ConfiguredItem::unitAsString() const
-{
+QString ConfiguredItem::unitAsString() const {
   return parameterUnit_;
+}
+
+void ConfiguredItem::setVisualState(VisualState state) {
+  visualState_ = state;
+}
+
+bool ConfiguredItem::hasError() const {
+  return hasError_;
+}
+
+void ConfiguredItem::setHasError(bool hasError) {
+  hasError_ = hasError;
+}
+
+bool ConfiguredItem::isDirty() const {
+  return isDirty_;
+}
+
+void ConfiguredItem::setIsDirty(bool isDirty) {
+  isDirty_ = isDirty;
+}
+
+ConfiguredItem::VisualState ConfiguredItem::visualState() const {
+  if (hasError_) {
+    return VisualState::Error;
+  } else if (isDirty_) {
+    return VisualState::Dirty;
+  } else {
+    return VisualState::Normal;
+  }
 }

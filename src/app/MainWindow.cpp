@@ -13,7 +13,6 @@
 #include "app/MainWindow.hpp"
 
 #include <QAction>
-#include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>

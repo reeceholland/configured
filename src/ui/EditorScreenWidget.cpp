@@ -1,6 +1,8 @@
 #include "ui/EditorScreenWidget.hpp"
 
+#include <QBrush>
 #include <QCheckBox>
+#include <QColor>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -17,6 +19,7 @@
 
 #include "core/ConfiguredItem.hpp"
 #include "core/ConfiguredProject.hpp"
+#include "core/validation/item/ItemValidator.hpp"
 
 namespace {
 int countParameterKeyOccurrences(const ConfiguredItem* item, const QString& key) {
@@ -35,6 +38,17 @@ int countParameterKeyOccurrences(const ConfiguredItem* item, const QString& key)
   }
 
   return count;
+}
+}  // namespace
+
+namespace {
+QString firstErrorForField(const ValidationResult& result, const QString& field) {
+  for (const ValidationMessage& message : result.messages()) {
+    if (message.field == field && message.severity == ValidationSeverity::Error) {
+      return message.message;
+    }
+  }
+  return "";
 }
 }  // namespace
 
@@ -66,7 +80,13 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   descriptionEdit_ = new QTextEdit(rightPanel);
   descriptionEdit_->setMinimumHeight(120);
 
+  itemNameErrorLabel_ = new QLabel(this);
+  itemNameErrorLabel_->setStyleSheet("color: #ff6b6b;");
+  itemNameErrorLabel_->setVisible(false);
+
   form->addRow("Name:", nameEdit_);
+  form->addRow("", itemNameErrorLabel_);
+
   form->addRow("Type:", typeCombo_);
   form->addRow("Description:", descriptionEdit_);
 
@@ -78,11 +98,24 @@ EditorScreenWidget::EditorScreenWidget(QWidget* parent)
   parameterUnitEdit_ = new QLineEdit(parameterPanel_);
   requiredCheck_ = new QCheckBox("Required", parameterPanel_);
 
+  parameterKeyErrorLabel_ = new QLabel(this);
+  parameterKeyErrorLabel_->setStyleSheet("color: #ff6b6b;");
+  parameterKeyErrorLabel_->setVisible(false);
+
+  parameterValueErrorLabel_ = new QLabel(this);
+  parameterValueErrorLabel_->setStyleSheet("color: #ff6b6b;");
+  parameterValueErrorLabel_->setVisible(false);
+
   parameterForm->addRow("Parameter Key:", parameterKeyEdit_);
+  parameterForm->addRow("", parameterKeyErrorLabel_);
+
   parameterForm->addRow("Parameter Value:", parameterValueEdit_);
+  parameterForm->addRow("", parameterValueErrorLabel_);
+
   parameterForm->addRow("Unit:", parameterUnitEdit_);
   parameterForm->addRow("", requiredCheck_);
 
+  parameterForm->addRow("", itemNameErrorLabel_);
   rightLayout->addWidget(title);
   rightLayout->addLayout(form);
   rightLayout->addWidget(parameterPanel_);
@@ -241,6 +274,7 @@ void EditorScreenWidget::removeSelectedItem() {
 
 void EditorScreenWidget::rebuildTree() {
   tree_->clear();
+  itemToTreeItem_.clear();
 
   if (!project_ || !project_->root()) {
     return;
@@ -250,6 +284,9 @@ void EditorScreenWidget::rebuildTree() {
   rootItem->setText(0, project_->root()->name());
   rootItem->setData(0, Qt::UserRole,
                     QVariant::fromValue(reinterpret_cast<quintptr>(project_->root())));
+  itemToTreeItem_[project_->root()] = rootItem;
+
+  applyTreeItemState(rootItem, project_->root());
 
   for (auto& child : project_->root()->children()) {
     addTreeItemRecursive(rootItem, child.get());
@@ -267,6 +304,9 @@ void EditorScreenWidget::addTreeItemRecursive(QTreeWidgetItem* parentItem, Confi
   auto* treeItem = new QTreeWidgetItem(parentItem);
   treeItem->setText(0, item->name());
   treeItem->setData(0, Qt::UserRole, QVariant::fromValue(reinterpret_cast<quintptr>(item)));
+
+  itemToTreeItem_[item] = treeItem;
+  applyTreeItemState(treeItem, item);
 
   for (auto& child : item->children()) {
     addTreeItemRecursive(treeItem, child.get());
@@ -405,38 +445,36 @@ bool EditorScreenWidget::hasProjectFilePath() const {
 }
 
 void EditorScreenWidget::updateParameterValidationUi() {
-  if (!selectedItem_ || !selectedItem_->isParameter()) {
-    parameterKeyEdit_->setStyleSheet("");
-    parameterValueEdit_->setStyleSheet("");
+  if (!selectedItem_) {
+    setValidationState(nameEdit_, itemNameErrorLabel_, "");
+    setValidationState(parameterKeyEdit_, parameterKeyErrorLabel_, "");
+    setValidationState(parameterValueEdit_, parameterValueErrorLabel_, "");
     return;
   }
 
-  const bool isRequired = selectedItem_->required();
-  const QString currentKey = selectedItem_->parameterKey().trimmed();
+  ItemValidationContext context;
+  context.item = selectedItem_;
+  context.project = project_.get();
 
-  const bool keyMissing = currentKey.isEmpty();
-  const bool valueMissing = selectedItem_->parameterValue().trimmed().isEmpty();
+  ItemValidator validator;
+  const ValidationResult result = validator.validate(context);
 
-  bool duplicateKey = false;
-  if (project_ && !currentKey.isEmpty() && project_->root()) {
-    duplicateKey = countParameterKeyOccurrences(project_->root(), currentKey) > 1;
-  }
+  selectedItem_->setHasError(!result.isValid());
+  refreshTreeItemState(selectedItem_);
 
-  const bool keyInvalid = (isRequired && keyMissing) || duplicateKey;
-  const bool valueInvalid = isRequired && valueMissing;
+  const QString nameError = firstErrorForField(result, "name");
+  setValidationState(nameEdit_, itemNameErrorLabel_, nameError);
 
-  parameterKeyEdit_->setStyleSheet(keyInvalid ? "border: 2px solid red;" : "");
-  parameterValueEdit_->setStyleSheet(valueInvalid ? "border: 2px solid red;" : "");
+  if (selectedItem_->isParameter()) {
+    const QString keyError = firstErrorForField(result, "parameterKey");
+    const QString valueError = firstErrorForField(result, "parameterValue");
 
-  if (duplicateKey) {
-    parameterKeyEdit_->setToolTip("This parameter key is duplicated in the project.");
-  } else if (isRequired && keyMissing) {
-    parameterKeyEdit_->setToolTip("Required parameters must have a key.");
+    setValidationState(parameterKeyEdit_, parameterKeyErrorLabel_, keyError);
+    setValidationState(parameterValueEdit_, parameterValueErrorLabel_, valueError);
   } else {
-    parameterKeyEdit_->setToolTip("");
+    setValidationState(parameterKeyEdit_, parameterKeyErrorLabel_, "");
+    setValidationState(parameterValueEdit_, parameterValueErrorLabel_, "");
   }
-
-  parameterValueEdit_->setToolTip(valueInvalid ? "Required parameters must have a value." : "");
 }
 
 void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,
@@ -445,4 +483,49 @@ void EditorScreenWidget::setProject(std::unique_ptr<ConfiguredProject> project,
   currentFilePath_ = filePath;
   selectedItem_ = nullptr;
   rebuildTree();
+}
+
+void EditorScreenWidget::setValidationState(QWidget* field, QLabel* errorLabel,
+                                            const QString& errorText) {
+  const bool valid = errorText.isEmpty();
+  field->setStyleSheet(valid ? "" : "border: 2px solid #ff6b6b;");
+  field->setToolTip(errorText);
+  errorLabel->setText(errorText);
+  errorLabel->setVisible(!valid);
+}
+
+void EditorScreenWidget::applyTreeItemState(QTreeWidgetItem* treeItem, const ConfiguredItem* item) {
+  if (!treeItem || !item) {
+    return;
+  }
+
+  switch (item->visualState()) {
+    case ConfiguredItem::VisualState::Error:
+      treeItem->setBackground(0, QBrush(QColor("#ff6b6b")));
+      break;
+    case ConfiguredItem::VisualState::Dirty:
+      treeItem->setBackground(0, QBrush(QColor("#ffb347")));
+      break;
+    case ConfiguredItem::VisualState::Normal:
+    default:
+      treeItem->setBackground(0, QBrush(Qt::NoBrush));
+      break;
+  }
+}
+
+void EditorScreenWidget::refreshTreeItemState(ConfiguredItem* item) {
+  if (!item) {
+    return;
+  }
+
+  if (!item) {
+    return;
+  }
+
+  auto it = itemToTreeItem_.find(item);
+  if (it == itemToTreeItem_.end()) {
+    return;
+  }
+
+  applyTreeItemState(it.value(), item);
 }

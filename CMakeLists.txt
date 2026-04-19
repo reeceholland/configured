@@ -54,6 +54,12 @@ add_executable(Configured
     src/core/ProjectMetadataService.cpp
     include/core/ProjectMetadataService.hpp
 
+    src/core/validation/ValidationResult.cpp
+    src/core/validation/metadata/ProjectMetadataValidator.cpp
+    src/core/validation/metadata/ProjectMetadataValidators.cpp
+    src/core/validation/item/ItemValidator.cpp
+    src/core/validation/item/ItemValidators.cpp
+
     resources/app.qrc
 )
 
@@ -90,3 +96,7 @@ if(DOXYGEN_FOUND)
 else()
     message(STATUS "Doxygen not found, 'doc' target will not be available")
 endif()
+
+install(TARGETS Configured
+    RUNTIME DESTINATION .
+)

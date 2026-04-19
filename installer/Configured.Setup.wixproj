@@ -1,0 +1,23 @@
+<Project Sdk="WixToolset.Sdk/7.0.0">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <AcceptEula>wix7</AcceptEula>
+    <BindInputPaths>$(MSBuildProjectDirectory)\publish</BindInputPaths>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Heat" Version="6.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Bundle.wxs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <HarvestDirectory Include="publish">
+      <ComponentGroupName>ProductComponents</ComponentGroupName>
+      <DirectoryRefId>INSTALLFOLDER</DirectoryRefId>
+      <SuppressRootDirectory>true</SuppressRootDirectory>
+    </HarvestDirectory>
+  </ItemGroup>
+</Project>
