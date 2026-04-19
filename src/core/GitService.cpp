@@ -1,5 +1,6 @@
 #include "core/GitService.hpp"
 
+#include <QDir>
 #include <QProcess>
 
 bool GitService::runGit(const QString& workingDir, const QStringList& arguments,
@@ -105,6 +106,24 @@ bool GitService::getCommitHash(const QString& workingDir, QString* hash, QString
 
   if (hash) {
     *hash = result.trimmed();
+  }
+
+  return ok;
+}
+
+bool GitService::cloneRepository(const QString& remoteUrl, const QString& parentFolder,
+                                 QString* clonedPath, QString* output) const {
+  if (remoteUrl.trimmed().isEmpty() || parentFolder.trimmed().isEmpty()) {
+    if (output) {
+      *output = "Remote URL and parent folder must be provided.";
+    }
+    return false;
+  }
+
+  const bool ok = runGit(parentFolder, {"clone", remoteUrl}, output);
+  if (ok && clonedPath) {
+    const QString repoName = remoteUrl.section('/', -1).remove(".git");
+    *clonedPath = QDir(parentFolder).filePath(repoName);
   }
 
   return ok;

@@ -21,17 +21,21 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <QThread>
 #include <QToolBar>
 #include <QToolButton>
 
+#include "core/CloneWorker.hpp"
 #include "core/ConfiguredProject.hpp"
 #include "export/JsonProjectExporter.hpp"
 #include "export/XmlProjectExporter.hpp"
+#include "ui/ConnectingDialog.hpp"
 #include "ui/EditorScreenWidget.hpp"
 #include "ui/GitConfigDialog.hpp"
 #include "ui/HelpScreenWidget.hpp"
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
+#include "ui/RemoteConnectDialog.hpp"
 
 MainWindow::MainWindow() {
   setWindowTitle("CONFIGURED");
@@ -239,6 +243,10 @@ MainWindow::MainWindow() {
 
   connect(home_, &HomeScreenWidget::helpRequested, this, [this]() {
     showHelp();
+  });
+
+  connect(home_, &HomeScreenWidget::connectRemoteRequested, this, [this]() {
+    promptAndCloneRemoteProject();
   });
 
   showHome();
@@ -621,4 +629,88 @@ void MainWindow::editProjectMetadata() {
 
   updateWindowTitle();
   updateGitUiVisibility();
+}
+
+void MainWindow::promptAndCloneRemoteProject() {
+  RemoteConnectDialog dialog(this);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isGitAvailable(&output)) {
+    QMessageBox::warning(this, "Connect Remote", "Git is not available.\n\n" + output);
+    return;
+  }
+
+  auto* connectingDialog = new ConnectingDialog(this);
+  auto* thread = new QThread(this);
+  auto* worker = new CloneWorker(dialog.remoteUrl(), dialog.parentFolder());
+
+  worker->moveToThread(thread);
+
+  connect(thread, &QThread::started, worker, &CloneWorker::start);
+
+  connect(connectingDialog, &ConnectingDialog::cancelRequested, worker, &CloneWorker::cancel);
+
+  connect(worker, &CloneWorker::outputReceived, connectingDialog, &ConnectingDialog::appendOutput);
+
+  connect(worker, &CloneWorker::finished, this,
+          [this, connectingDialog, thread, worker](bool success, const QString& clonedPath,
+                                                   const QString& output) {
+            connectingDialog->appendOutput(output);
+            connectingDialog->accept();
+
+            thread->quit();
+            worker->deleteLater();
+            thread->deleteLater();
+            connectingDialog->deleteLater();
+
+            if (!success) {
+              QMessageBox::warning(this, "Connect Remote",
+                                   "Repository could not be cloned.\n\n" + output);
+              return;
+            }
+
+            const QString projectFilePath = findConfiguredFile(clonedPath);
+            if (projectFilePath.isEmpty()) {
+              QMessageBox::warning(this, "Connect Remote",
+                                   "Repository cloned, but no .configured file was found.");
+              return;
+            }
+
+            QString error;
+            auto loadedProject = projectService_.loadProject(projectFilePath, error);
+
+            if (!loadedProject) {
+              QMessageBox::warning(this, "Open Failed", error);
+              return;
+            }
+
+            currentProject_ = std::move(loadedProject);
+            currentProjectFilePath_ = projectFilePath;
+
+            editor_->setProject(currentProject_.get());
+
+            updateWindowTitle();
+            updateGitUiVisibility();
+            showEditor();
+          });
+
+  connect(worker, &CloneWorker::finished, thread, &QThread::quit);
+
+  thread->start();
+  connectingDialog->exec();
+}
+
+QString MainWindow::findConfiguredFile(const QString& folderPath) const {
+  QDir dir(folderPath);
+  const QStringList files = dir.entryList({"*.configured"}, QDir::Files);
+
+  if (files.size() == 1) {
+    return dir.filePath(files.first());
+  }
+
+  return {};
 }
