@@ -75,6 +75,7 @@ MainWindow::MainWindow() {
   gitStatusAction_ = new QAction("Git Status", this);
   gitCommitAction_ = new QAction("Git Commit", this);
   gitConfigAction_ = new QAction("Git Identity", this);
+  gitConnectRemoteAction_ = new QAction("Connect Remote", this);
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
@@ -99,11 +100,11 @@ MainWindow::MainWindow() {
   toolbar_->addWidget(editButton);
 
   auto* gitMenu = new QMenu(this);
-  // gitMenu->addAction(gitInitAction_);
+  gitMenu->addAction(gitConnectRemoteAction_);
+  gitMenu->addSeparator();
   gitMenu->addAction(gitStatusAction_);
   gitMenu->addAction(gitCommitAction_);
   gitMenu->addAction(gitConfigAction_);
-
   gitButton_ = new QToolButton(this);
   gitButton_->setText("Git");
   gitButton_->setMenu(gitMenu);
@@ -233,6 +234,8 @@ MainWindow::MainWindow() {
     promptAndCreateProject();
   });
 
+  connect(gitConnectRemoteAction_, &QAction::triggered, this, &MainWindow::onGitConnectRemote);
+
   connect(gitStatusAction_, &QAction::triggered, this, &MainWindow::onGitStatus);
 
   connect(gitCommitAction_, &QAction::triggered, this, &MainWindow::onGitCommit);
@@ -318,6 +321,10 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 
   if (exportJsonAction_) {
     exportJsonAction_->setEnabled(enabled);
+  }
+
+  if (gitConnectRemoteAction_) {
+    gitConnectRemoteAction_->setEnabled(enabled);
   }
 }
 
@@ -713,4 +720,40 @@ QString MainWindow::findConfiguredFile(const QString& folderPath) const {
   }
 
   return {};
+}
+
+void MainWindow::onGitConnectRemote() {
+  if (!currentProject_ || !currentProject_->isGitManaged()) {
+    QMessageBox::information(this, "Git",
+                             "Open a Git-managed project first before connecting to a remote.");
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Git",
+                             "Current project does not have a valid working directory.");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isRepository(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Connect Remote", "This folder is not a Git repository.");
+    return;
+  }
+
+  bool ok = false;
+  const QString remoteUrl = QInputDialog::getText(this, "Connect Git Remote",
+                                                  "Remote URL:", QLineEdit::Normal, QString(), &ok);
+
+  if (!ok || remoteUrl.trimmed().isEmpty()) {
+    return;
+  }
+
+  if (!gitService_.connectRemote(workingDir, "origin", remoteUrl.trimmed(), &output)) {
+    QMessageBox::warning(this, "Connect Remote", output);
+    return;
+  }
+
+  QMessageBox::information(this, "Connect Remote", "Remote repository connected.");
 }

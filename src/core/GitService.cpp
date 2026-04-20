@@ -128,3 +128,49 @@ bool GitService::cloneRepository(const QString& remoteUrl, const QString& parent
 
   return ok;
 }
+
+bool GitService::remoteExists(const QString& workingDir, const QString& name,
+                              QString* output) const {
+  return runGit(workingDir, {"remote", "get-url", name}, output);
+}
+
+bool GitService::addRemote(const QString& workingDir, const QString& name, const QString& url,
+                           QString* output) const {
+  return runGit(workingDir, {"remote", "add", name, url}, output);
+}
+
+bool GitService::setRemoteUrl(const QString& workingDir, const QString& name, const QString& url,
+                              QString* output) const {
+  return runGit(workingDir, {"remote", "set-url", name, url}, output);
+}
+
+bool GitService::connectRemote(const QString& workingDir, const QString& name, const QString& url,
+                               QString* output) const {
+  if (workingDir.trimmed().isEmpty()) {
+    if (output) {
+      *output = "Working directory is empty.";
+    }
+    return false;
+  }
+
+  if (name.trimmed().isEmpty()) {
+    if (output) {
+      *output = "Remote name is empty.";
+    }
+    return false;
+  }
+
+  if (url.trimmed().isEmpty()) {
+    if (output) {
+      *output = "Remote URL is empty.";
+    }
+    return false;
+  }
+
+  QString remoteOutput;
+  if (remoteExists(workingDir, name.trimmed(), &remoteOutput)) {
+    return setRemoteUrl(workingDir, name.trimmed(), url.trimmed(), output);
+  }
+
+  return addRemote(workingDir, name.trimmed(), url.trimmed(), output);
+}

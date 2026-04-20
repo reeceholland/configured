@@ -167,6 +167,8 @@ class MainWindow : public QMainWindow {
    */
   void onGitCommit();
 
+  void onGitConnectRemote();
+
  private:
   /// @brief The main stacked widget that holds the different screens (home, editor, help).
   QStackedWidget* stack_ = nullptr;
@@ -227,6 +229,8 @@ class MainWindow : public QMainWindow {
 
   /// @brief The Git configuration action.
   QAction* gitConfigAction_ = nullptr;
+
+  QAction* gitConnectRemoteAction_ = nullptr;
 
   /// @brief The export action.
   QAction* exportAction_ = nullptr;

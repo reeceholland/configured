@@ -21,6 +21,17 @@ class GitService {
 
   bool cloneRepository(const QString& remoteUrl, const QString& parentFolder, QString* clonedPath,
                        QString* output = nullptr) const;
+  bool remoteExists(const QString& workingDir, const QString& name,
+                    QString* output = nullptr) const;
+
+  bool addRemote(const QString& workingDir, const QString& name, const QString& url,
+                 QString* output = nullptr) const;
+
+  bool setRemoteUrl(const QString& workingDir, const QString& name, const QString& url,
+                    QString* output = nullptr) const;
+
+  bool connectRemote(const QString& workingDir, const QString& name, const QString& url,
+                     QString* output = nullptr) const;
 
  private:
   bool runGit(const QString& workingDir, const QStringList& arguments,
