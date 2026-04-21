@@ -30,8 +30,19 @@ class GitService {
   bool setRemoteUrl(const QString& workingDir, const QString& name, const QString& url,
                     QString* output = nullptr) const;
 
+  bool remoteUrl(const QString& workingDir, const QString& name, QString* url,
+                 QString* output = nullptr) const;
+
   bool connectRemote(const QString& workingDir, const QString& name, const QString& url,
                      QString* output = nullptr) const;
+
+  bool currentBranch(const QString& workingDir, QString* branchName,
+                     QString* output = nullptr) const;
+
+  bool workingTreeClean(const QString& workingDir, bool* clean, QString* output = nullptr) const;
+
+  bool hasUnpushedCommits(const QString& workingDir, bool* hasUnpushedCommits,
+                          QString* output = nullptr) const;
 
  private:
   bool runGit(const QString& workingDir, const QStringList& arguments,

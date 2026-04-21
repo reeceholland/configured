@@ -25,6 +25,7 @@ class QMenu;
 class HomeScreenWidget;
 class EditorScreenWidget;
 class HelpScreenWidget;
+class QLabel;
 
 /**
  * @brief Main window of the Configured application.
@@ -47,6 +48,12 @@ class MainWindow : public QMainWindow {
    * and slots for various actions.
    */
   MainWindow();
+
+  /**
+   * @brief Destroy the Main Window object
+   *
+   * Cleans up any resources used by the main window.
+   */
   ~MainWindow() override;
 
  private:
@@ -145,9 +152,61 @@ class MainWindow : public QMainWindow {
    */
   void editProjectMetadata();
 
+  /**
+   * @brief Prompt the user to connect to a remote Git repository and clone it.
+   *
+   * Displays a dialog to gather information for connecting to a remote Git
+   * repository. If the connection and cloning are successful, the cloned project
+   * is loaded into the editor. Displays error messages if Git is not available,
+   * if the connection fails, or if the cloned repository does not contain a valid
+   * project file.
+   */
   void promptAndCloneRemoteProject();
 
+  /**
+   * @brief Find a .configured project file in the specified folder.
+   *
+   * Searches the given folder for files with the .configured extension. If exactly
+   * one such file is found, its absolute path is returned. If no .configured files
+   * are found, or if multiple are found, an empty string is returned.
+   *
+   * @param folderPath The path to the folder to search for a .configured file.
+   * @return QString The absolute path to the found .configured file, or an empty
+   * string if no valid file is found.
+   */
   QString findConfiguredFile(const QString& folderPath) const;
+
+  /**
+   * @brief Update the remote URL status in the Git status bar.
+   *
+   * Updates the Git status bar to display the current remote URL of the Git repository.
+   *
+   */
+  void updateRemoteUrlStatus();
+
+  /**
+   * @brief Update the current Git branch status in the Git status bar.
+   *
+   * Updates the Git status bar to display the name of the current Git branch for the loaded
+   * project.
+   */
+  void updateBranchStatus();
+
+  /**
+   * @brief Update the project dirty status in the Git status bar.
+   *
+   * Updates the Git status bar to indicate whether the current project has uncommitted changes.
+   */
+  void updateProjectDirtyStatus();
+
+  /**
+   * @brief Update the entire Git status bar.
+   *
+   * Refreshes all Git-related status indicators in the status bar, including remote URL, branch
+   * name, and dirty status. This is typically called after actions that may change the Git state,
+   * such as committing.
+   */
+  void updateGitStatusBar();
 
  private slots:
 
@@ -167,6 +226,13 @@ class MainWindow : public QMainWindow {
    */
   void onGitCommit();
 
+  /**
+   * @brief Handle the Git connect remote action.
+   *
+   * This slot is called when the user triggers the Git connect remote action. It
+   * prompts the user to enter a remote URL and attempts to connect the local Git
+   * repository to the specified remote.
+   */
   void onGitConnectRemote();
 
  private:
@@ -230,19 +296,36 @@ class MainWindow : public QMainWindow {
   /// @brief The Git configuration action.
   QAction* gitConfigAction_ = nullptr;
 
+  /// @brief The Git connect remote action.
   QAction* gitConnectRemoteAction_ = nullptr;
+
+  /// @brief The Git pull action.
+  QAction* gitPullAction_ = nullptr;
 
   /// @brief The export action.
   QAction* exportAction_ = nullptr;
 
+  /// @brief The last central widget that was displayed.
   QWidget* lastCentral_ = nullptr;
+
+  /// @brief The label in the status bar that shows the current Git remote URL.
+  QLabel* remoteUrlStatusLabel_ = nullptr;
+
+  /// @brief The label in the status bar that shows the current Git branch.
+  QLabel* gitBranchLabel_ = nullptr;
+
+  /// @brief The label in the status bar that indicates if the project has uncommitted changes.
+  QLabel* projectDirtyStatusLabel_ = nullptr;
 
   /// @brief The Git service for handling Git operations.
   GitService gitService_;
 
+  /// @brief The project service for handling project operations.
   ProjectService projectService_{&gitService_};
 
+  /// @brief The currently loaded project, if any.
   std::unique_ptr<ConfiguredProject> currentProject_;
 
+  /// @brief The file path of the currently loaded project, if any.
   QString currentProjectFilePath_;
 };

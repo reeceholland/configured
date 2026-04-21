@@ -17,10 +17,12 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QInputDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <QStatusBar>
 #include <QThread>
 #include <QToolBar>
 #include <QToolButton>
@@ -71,11 +73,20 @@ MainWindow::MainWindow() {
   exportXmlAction_ = new QAction("Export to XML", this);
   exportJsonAction_ = new QAction("Export to JSON", this);
 
-  // gitInitAction_ = new QAction("Git Init", this);
   gitStatusAction_ = new QAction("Git Status", this);
   gitCommitAction_ = new QAction("Git Commit", this);
   gitConfigAction_ = new QAction("Git Identity", this);
   gitConnectRemoteAction_ = new QAction("Connect Remote", this);
+  gitPullAction_ = new QAction("Git Pull", this);
+
+  remoteUrlStatusLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(remoteUrlStatusLabel_);
+
+  gitBranchLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(gitBranchLabel_);
+
+  projectDirtyStatusLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(projectDirtyStatusLabel_);
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
@@ -101,10 +112,12 @@ MainWindow::MainWindow() {
 
   auto* gitMenu = new QMenu(this);
   gitMenu->addAction(gitConnectRemoteAction_);
+  gitMenu->addAction(gitPullAction_);
   gitMenu->addSeparator();
   gitMenu->addAction(gitStatusAction_);
   gitMenu->addAction(gitCommitAction_);
   gitMenu->addAction(gitConfigAction_);
+
   gitButton_ = new QToolButton(this);
   gitButton_->setText("Git");
   gitButton_->setMenu(gitMenu);
@@ -179,6 +192,7 @@ MainWindow::MainWindow() {
 
     QMessageBox::information(this, "Save Successful", "Project saved successfully.");
     updateWindowTitle();
+    updateGitStatusBar();
   });
 
   connect(addChildAction_, &QAction::triggered, this, [this]() {
@@ -225,6 +239,7 @@ MainWindow::MainWindow() {
 
     editor_->setProject(currentProject_.get());
 
+    updateGitStatusBar();
     updateWindowTitle();
     updateGitUiVisibility();
     showEditor();
@@ -268,6 +283,7 @@ void MainWindow::showHome() {
   if (gitButtonAction_) {
     gitButtonAction_->setVisible(false);
   }
+
   setEditorActionsEnabled(false);
 }
 
@@ -280,6 +296,7 @@ void MainWindow::showEditor() {
 
   setEditorActionsEnabled(true);
   updateGitUiVisibility();
+  updateGitStatusBar();
 }
 
 void MainWindow::setEditorActionsEnabled(bool enabled) {
@@ -325,6 +342,10 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 
   if (gitConnectRemoteAction_) {
     gitConnectRemoteAction_->setEnabled(enabled);
+  }
+
+  if (gitPullAction_) {
+    gitPullAction_->setEnabled(enabled);
   }
 }
 
@@ -381,6 +402,7 @@ void MainWindow::promptAndCreateProject() {
 
   editor_->setProject(currentProject_.get());
 
+  updateGitStatusBar();
   updateWindowTitle();
   updateGitUiVisibility();
   showEditor();
@@ -515,19 +537,12 @@ void MainWindow::onGitCommit() {
     QString hashOutput;
     if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
       currentProject_->setGitCommitHash(hash);
-
-      // Persist the new commit hash back into the .configured file.
-      QString saveError;
-      if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, saveError)) {
-        QMessageBox::warning(
-            this, "Git Commit",
-            "Commit created, but project file could not be updated:\n" + saveError);
-        return;
-      }
     }
   }
 
   QMessageBox::information(this, "Git Commit", output.isEmpty() ? "Commit created." : output);
+
+  updateGitStatusBar();
 }
 
 void MainWindow::exportParametersToXml() {
@@ -756,4 +771,108 @@ void MainWindow::onGitConnectRemote() {
   }
 
   QMessageBox::information(this, "Connect Remote", "Remote repository connected.");
+
+  updateGitStatusBar();
+}
+
+void MainWindow::updateRemoteUrlStatus() {
+  if (!remoteUrlStatusLabel_) {
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    remoteUrlStatusLabel_->setText("Remote: Not Connected");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isRepository(workingDir, &output)) {
+    remoteUrlStatusLabel_->setText("Remote: Not Connected");
+    return;
+  }
+
+  QString remoteUrl;
+  if (gitService_.remoteUrl(workingDir, "origin", &remoteUrl, &output)) {
+    remoteUrlStatusLabel_->setText("Remote: " + remoteUrl);
+  } else {
+    remoteUrlStatusLabel_->setText("Remote: Not Connected");
+  }
+}
+
+void MainWindow::updateBranchStatus() {
+  if (!gitBranchLabel_) {
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    gitBranchLabel_->setText("");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isRepository(workingDir, &output)) {
+    gitBranchLabel_->setText("");
+    return;
+  }
+
+  QString branchName;
+  if (gitService_.currentBranch(workingDir, &branchName, &output)) {
+    gitBranchLabel_->setText(branchName.isEmpty() ? "" : "Branch: " + branchName);
+  } else {
+    gitBranchLabel_->setText("");
+  }
+}
+
+void MainWindow::updateProjectDirtyStatus() {
+  if (!projectDirtyStatusLabel_) {
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    projectDirtyStatusLabel_->setText("");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isRepository(workingDir, &output)) {
+    projectDirtyStatusLabel_->setText("");
+    return;
+  }
+  bool clean = false;
+  if (gitService_.workingTreeClean(workingDir, &clean, &output)) {
+    if (clean) {
+      projectDirtyStatusLabel_->setText("Project: Clean");
+      projectDirtyStatusLabel_->setStyleSheet("color: green;");
+    } else {
+      projectDirtyStatusLabel_->setText("Project: Dirty");
+      projectDirtyStatusLabel_->setStyleSheet("color: orange;");
+    }
+  }
+}
+
+void MainWindow::updateGitStatusBar() {
+  const bool showStatus = stack_ && stack_->currentWidget() == editor_ && currentProject_
+                          && currentProject_->isGitManaged();
+
+  statusBar()->setVisible(showStatus);
+
+  if (!showStatus) {
+    if (remoteUrlStatusLabel_) {
+      remoteUrlStatusLabel_->clear();
+    }
+    if (gitBranchLabel_) {
+      gitBranchLabel_->clear();
+    }
+    if (projectDirtyStatusLabel_) {
+      projectDirtyStatusLabel_->clear();
+    }
+    return;
+  }
+
+  updateRemoteUrlStatus();
+  updateBranchStatus();
+  updateProjectDirtyStatus();
 }
