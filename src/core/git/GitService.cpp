@@ -302,3 +302,40 @@ bool GitService::hasUnpushedCommits(const QString& workingDir, bool* hasUnpushed
   *hasUnpushedCommits = unpushedCount > 0;
   return true;
 }
+
+bool GitService::hasUpstream(const QString& workingDir, bool* hasUpstream, QString* output) const {
+  if (!hasUpstream) {
+    if (output) {
+      *output = "hasUpstream pointer is null.";
+    }
+    return false;
+  }
+
+  *hasUpstream = false;
+
+  if (workingDir.trimmed().isEmpty()) {
+    if (output) {
+      *output = "Working directory is empty.";
+    }
+    return false;
+  }
+
+  QString repoOutput;
+  if (!isRepository(workingDir, &repoOutput)) {
+    if (output) {
+      *output = "Not a Git repository: " + repoOutput;
+    }
+    return false;
+  }
+
+  QString result;
+  const bool ok =
+      runGit(workingDir, {"rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"}, &result);
+
+  if (output) {
+    *output = result;
+  }
+
+  *hasUpstream = ok;
+  return true;
+}

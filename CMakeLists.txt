@@ -72,6 +72,12 @@ add_executable(Configured
     src/ui/PullingDialog.cpp
     include/ui/PullingDialog.hpp
 
+    src/core/git/GitPushWorker.cpp
+    include/core/git/GitPushWorker.hpp
+
+    src/ui/PushingDialog.cpp
+    include/ui/PushingDialog.hpp
+
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp
     src/core/validation/metadata/ProjectMetadataValidators.cpp

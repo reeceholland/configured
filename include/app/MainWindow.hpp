@@ -14,8 +14,8 @@
 
 #include <QMainWindow>
 
-#include "core/git/GitService.hpp"
 #include "core/ProjectService.hpp"
+#include "core/git/GitService.hpp"
 
 class QStackedWidget;
 class QAction;
@@ -225,6 +225,16 @@ class MainWindow : public QMainWindow {
    */
   void promptAndGitPull();
 
+  /**
+   * @brief Prompt the user to push commits to the remote Git repository.
+   *
+   * Displays a confirmation dialog to push commits to the remote repository. If the user confirms,
+   * it performs a Git push operation and updates the project and Git status accordingly. Displays
+   * error messages if the push operation fails, if there are no commits to push, or if Git is not
+   * available.
+   */
+  void promptAndGitPush();
+
  private slots:
 
   /**
@@ -319,6 +329,8 @@ class MainWindow : public QMainWindow {
   /// @brief The Git pull action.
   QAction* gitPullAction_ = nullptr;
 
+  QAction* gitPushAction_ = nullptr;
+
   /// @brief The export action.
   QAction* exportAction_ = nullptr;
 
@@ -351,4 +363,6 @@ class MainWindow : public QMainWindow {
 
   /// @brief Flag indicating whether the current project has unsaved changes.
   bool hasUnsavedChanges_ = false;
+
+  QToolButton* gitRefreshButton_ = nullptr;
 };

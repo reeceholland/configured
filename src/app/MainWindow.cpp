@@ -27,9 +27,10 @@
 #include <QToolBar>
 #include <QToolButton>
 
-#include "core/git/CloneWorker.hpp"
 #include "core/ConfiguredProject.hpp"
+#include "core/git/CloneWorker.hpp"
 #include "core/git/GitPullWorker.hpp"
+#include "core/git/GitPushWorker.hpp"
 #include "export/JsonProjectExporter.hpp"
 #include "export/XmlProjectExporter.hpp"
 #include "ui/ConnectingDialog.hpp"
@@ -39,6 +40,7 @@
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
 #include "ui/PullingDialog.hpp"
+#include "ui/PushingDialog.hpp"
 #include "ui/RemoteConnectDialog.hpp"
 
 MainWindow::MainWindow() {
@@ -80,6 +82,7 @@ MainWindow::MainWindow() {
   gitConfigAction_ = new QAction("Git Identity", this);
   gitConnectRemoteAction_ = new QAction("Connect Remote", this);
   gitPullAction_ = new QAction("Git Pull", this);
+  gitPushAction_ = new QAction("Git Push", this);
 
   remoteUrlStatusLabel_ = new QLabel(this);
   statusBar()->addPermanentWidget(remoteUrlStatusLabel_);
@@ -92,6 +95,36 @@ MainWindow::MainWindow() {
 
   unpushedCommitsLabel_ = new QLabel(this);
   statusBar()->addPermanentWidget(unpushedCommitsLabel_);
+
+  gitRefreshButton_ = new QToolButton(this);
+  gitRefreshButton_->setText("Refresh");
+  gitRefreshButton_->setToolTip("Refresh Git status");
+  gitRefreshButton_->setAutoRaise(true);
+  gitRefreshButton_->setStyleSheet(R"(
+    QToolButton {
+      background-color: #e6e6e6;
+      border: 1px solid #b8b8b8;
+      border-radius: 3px;
+      padding: 1px 2px;
+      color: #222222;
+    }
+
+    QToolButton:hover {
+      background-color: #f2f2f2;
+    }
+
+    QToolButton:pressed {
+      background-color: #d6d6d6;
+    }
+  )");
+  statusBar()->addPermanentWidget(gitRefreshButton_);
+  gitRefreshButton_->setVisible(false);
+
+  statusBar()->setStyleSheet(R"(
+    QStatusBar::item {
+      border: none;
+    }
+  )");
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
@@ -118,6 +151,7 @@ MainWindow::MainWindow() {
   auto* gitMenu = new QMenu(this);
   gitMenu->addAction(gitConnectRemoteAction_);
   gitMenu->addAction(gitPullAction_);
+  gitMenu->addAction(gitPushAction_);
   gitMenu->addSeparator();
   gitMenu->addAction(gitStatusAction_);
   gitMenu->addAction(gitCommitAction_);
@@ -228,6 +262,10 @@ MainWindow::MainWindow() {
     promptAndGitPull();
   });
 
+  connect(gitPushAction_, &QAction::triggered, this, [this]() {
+    promptAndGitPush();
+  });
+
   connect(home_, &HomeScreenWidget::openProjectRequested, this, [this]() {
     const QString filePath = QFileDialog::getOpenFileName(
         this, "Open Configured Project", QString(),
@@ -289,6 +327,10 @@ MainWindow::MainWindow() {
     updateWindowTitle();
   });
 
+  connect(gitRefreshButton_, &QToolButton::clicked, this, [this]() {
+    updateGitStatusBar();
+  });
+
   showHome();
   setEditorActionsEnabled(false);
 }
@@ -307,6 +349,7 @@ void MainWindow::showHome() {
   }
 
   setEditorActionsEnabled(false);
+  updateGitStatusBar();
 }
 
 void MainWindow::showEditor() {
@@ -368,6 +411,10 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 
   if (gitPullAction_) {
     gitPullAction_->setEnabled(enabled);
+  }
+
+  if (gitRefreshButton_) {
+    gitRefreshButton_->setEnabled(enabled);
   }
 }
 
@@ -678,6 +725,81 @@ void MainWindow::editProjectMetadata() {
 
   updateWindowTitle();
   updateGitUiVisibility();
+  updateGitStatusBar();
+}
+void MainWindow::promptAndGitPush() {
+  const QString workingDir = currentProjectWorkingDirectory();
+
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Git Push", "Open a saved Git-managed project first.");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isGitAvailable(&output)) {
+    QMessageBox::warning(this, "Git Push", "Git is not available.\n\n" + output);
+    return;
+  }
+
+  if (!gitService_.isRepository(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Push", "This folder is not a Git repository.");
+    return;
+  }
+
+  if (!gitService_.remoteExists(workingDir, "origin", &output)) {
+    QMessageBox::warning(this, "Git Push", "No remote repository configured for this project.");
+    return;
+  }
+
+  QString branchName;
+  if (!gitService_.currentBranch(workingDir, &branchName, &output) || branchName.isEmpty()) {
+    QMessageBox::warning(this, "Git Push", "Could not determine current branch.\n\n" + output);
+    return;
+  }
+
+  bool hasUpstream = false;
+  if (!gitService_.hasUpstream(workingDir, &hasUpstream, &output)) {
+    QMessageBox::warning(this, "Git Push", "Could not check upstream branch.\n\n" + output);
+    return;
+  }
+
+  auto* pushingDialog = new PushingDialog(this);
+  pushingDialog->setStatusText("Pushing changes to remote...");
+
+  auto* thread = new QThread(this);
+  auto* worker = new GitPushWorker(workingDir, !hasUpstream, branchName);
+
+  worker->moveToThread(thread);
+
+  connect(thread, &QThread::started, worker, &GitPushWorker::start);
+  connect(pushingDialog, &PushingDialog::cancelRequested, worker, &GitPushWorker::cancel);
+  connect(worker, &GitPushWorker::outputReceived, pushingDialog, &PushingDialog::appendOutput);
+
+  connect(worker, &GitPushWorker::finished, this,
+          [this, pushingDialog, thread, worker](bool success, const QString& output) {
+            pushingDialog->appendOutput(output);
+
+            thread->quit();
+            worker->deleteLater();
+            thread->deleteLater();
+
+            if (!success) {
+              pushingDialog->setStatusText("Push failed. Review the output below.");
+              return;
+            }
+
+            pushingDialog->setStatusText("Push completed successfully.");
+            updateGitStatusBar();
+
+            QMessageBox::information(this, "Git Push", "Push completed successfully.");
+
+            pushingDialog->accept();
+
+            updateGitStatusBar();
+          });
+  thread->start();
+  pushingDialog->exec();
+  pushingDialog->deleteLater();
 }
 
 void MainWindow::promptAndGitPull() {
@@ -716,44 +838,44 @@ void MainWindow::promptAndGitPull() {
   connect(pullingDialog, &PullingDialog::cancelRequested, worker, &GitPullWorker::cancel);
   connect(worker, &GitPullWorker::outputReceived, pullingDialog, &PullingDialog::appendOutput);
 
-  connect(worker, &GitPullWorker::finished, this,
-          [this, pullingDialog, thread, worker](bool success, const QString& output) {
-            pullingDialog->appendOutput(output);
+  connect(
+      worker, &GitPullWorker::finished, this,
+      [this, pullingDialog, thread, worker](bool success, const QString& output) {
+        pullingDialog->appendOutput(output);
 
-            thread->quit();
-            worker->deleteLater();
-            thread->deleteLater();
+        thread->quit();
+        worker->deleteLater();
+        thread->deleteLater();
 
-            if (!success) {
-              pullingDialog->setStatusText("Pull failed. Review the output below.");
-              return;
-            }
+        if (!success) {
+          pullingDialog->setStatusText("Pull failed. Review the output below.");
+          return;
+        }
 
-            pullingDialog->setStatusText("Pull completed successfully.");
+        pullingDialog->setStatusText("Pull completed successfully.");
 
-            QString reloadError;
-            auto reloadedProject = projectService_.loadProject(currentProjectFilePath_, reloadError);
-            if (!reloadedProject) {
-              pullingDialog->setStatusText(
-                  "Pull completed, but the project could not be reloaded.");
-              QMessageBox::warning(this, "Git Pull",
-                                   "Pull completed, but the project could not be reloaded.\n\n"
-                                       + reloadError);
-              return;
-            }
+        QString reloadError;
+        auto reloadedProject = projectService_.loadProject(currentProjectFilePath_, reloadError);
+        if (!reloadedProject) {
+          pullingDialog->setStatusText("Pull completed, but the project could not be reloaded.");
+          QMessageBox::warning(
+              this, "Git Pull",
+              "Pull completed, but the project could not be reloaded.\n\n" + reloadError);
+          return;
+        }
 
-            currentProject_ = std::move(reloadedProject);
-            currentProject_->clearDirtyFlags();
-            hasUnsavedChanges_ = false;
-            editor_->setProject(currentProject_.get());
-            updateWindowTitle();
-            updateGitUiVisibility();
-            updateGitStatusBar();
+        currentProject_ = std::move(reloadedProject);
+        currentProject_->clearDirtyFlags();
+        hasUnsavedChanges_ = false;
+        editor_->setProject(currentProject_.get());
+        updateWindowTitle();
+        updateGitUiVisibility();
+        updateGitStatusBar();
 
-            QMessageBox::information(this, "Git Pull", "Pull completed successfully.");
+        QMessageBox::information(this, "Git Pull", "Pull completed successfully.");
 
-            pullingDialog->accept();
-          });
+        pullingDialog->accept();
+      });
 
   thread->start();
   pullingDialog->exec();
@@ -924,6 +1046,18 @@ void MainWindow::updateGitCommitStatus() {
     return;
   }
 
+  bool hasUpstream = false;
+  if (!gitService_.hasUpstream(workingDir, &hasUpstream, &output)) {
+    unpushedCommitsLabel_->setText("");
+    return;
+  }
+
+  if (!hasUpstream) {
+    unpushedCommitsLabel_->setText("First Push Needed");
+    unpushedCommitsLabel_->setStyleSheet("color: orange;");
+    return;
+  }
+
   bool hasUnpushed = false;
   if (gitService_.hasUnpushedCommits(workingDir, &hasUnpushed, &output)) {
     if (hasUnpushed) {
@@ -996,6 +1130,10 @@ void MainWindow::updateGitStatusBar() {
                           && currentProject_->isGitManaged();
 
   statusBar()->setVisible(showStatus);
+
+  if (gitRefreshButton_) {
+    gitRefreshButton_->setVisible(showStatus);
+  }
 
   if (!showStatus) {
     if (remoteUrlStatusLabel_) {
