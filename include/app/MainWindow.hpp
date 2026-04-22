@@ -199,6 +199,12 @@ class MainWindow : public QMainWindow {
    */
   void updateProjectDirtyStatus();
 
+  /**
+   * @brief Update the unpushed commits status in the Git status bar.
+   *
+   * Updates the Git status bar to indicate whether the current project has commits that have not
+   * been pushed to a remote repository.
+   */
   void updateGitCommitStatus();
 
   /**
@@ -210,6 +216,13 @@ class MainWindow : public QMainWindow {
    */
   void updateGitStatusBar();
 
+  /**
+   * @brief Prompt the user to pull the latest changes from the remote Git repository.
+   *
+   * Displays a confirmation dialog to pull the latest changes from the remote repository. If the
+   * user confirms, it performs a Git pull operation and updates the project and Git status
+   * accordingly. Displays error messages if the pull operation fails or if Git is not available.
+   */
   void promptAndGitPull();
 
  private slots:
@@ -321,6 +334,7 @@ class MainWindow : public QMainWindow {
   /// @brief The label in the status bar that indicates if the project has uncommitted changes.
   QLabel* projectDirtyStatusLabel_ = nullptr;
 
+  /// @brief The label in the status bar that indicates if the project has unpushed commits.
   QLabel* unpushedCommitsLabel_ = nullptr;
 
   /// @brief The Git service for handling Git operations.
@@ -335,5 +349,6 @@ class MainWindow : public QMainWindow {
   /// @brief The file path of the currently loaded project, if any.
   QString currentProjectFilePath_;
 
+  /// @brief Flag indicating whether the current project has unsaved changes.
   bool hasUnsavedChanges_ = false;
 };

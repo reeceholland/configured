@@ -15,8 +15,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
 add_executable(Configured
     src/main.cpp
 
-    # src/app/AppLogger.cpp
-    # include/app/AppLogger.hpp
+    src/app/AppLogger.cpp
+    include/app/AppLogger.hpp
 
     src/app/MainWindow.cpp
     include/app/MainWindow.hpp

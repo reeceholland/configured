@@ -1,10 +1,10 @@
 #include "core/GitService.hpp"
 
 #include <QDir>
-// #include <QLoggingCategory>
+#include <QLoggingCategory>
 #include <QProcess>
 
-// Q_LOGGING_CATEGORY(logGitService, "configured.core.git")
+Q_LOGGING_CATEGORY(logGitService, "configured.core.git")
 
 bool GitService::runGit(const QString& workingDir, const QStringList& arguments,
                         QString* output) const {
@@ -14,8 +14,8 @@ bool GitService::runGit(const QString& workingDir, const QStringList& arguments,
     process.setWorkingDirectory(workingDir);
   }
 
-  // qCInfo(logGitService) << "Running git" << arguments.join(' ') << "in"
-  //                       << (workingDir.trimmed().isEmpty() ? QString("<default>") : workingDir);
+  qCInfo(logGitService) << "Running git" << arguments.join(' ') << "in"
+                        << (workingDir.trimmed().isEmpty() ? QString("<default>") : workingDir);
 
   process.start("git", arguments);
 
@@ -23,7 +23,7 @@ bool GitService::runGit(const QString& workingDir, const QStringList& arguments,
     if (output) {
       *output = "Failed to start git.";
     }
-    // qCWarning(logGitService) << "Failed to start git" << arguments.join(' ');
+    qCWarning(logGitService) << "Failed to start git" << arguments.join(' ');
     return false;
   }
 
@@ -31,7 +31,7 @@ bool GitService::runGit(const QString& workingDir, const QStringList& arguments,
     if (output) {
       *output = "Git command timed out.";
     }
-    // qCWarning(logGitService) << "Git command timed out" << arguments.join(' ');
+    qCWarning(logGitService) << "Git command timed out" << arguments.join(' ');
     return false;
   }
 
@@ -45,7 +45,7 @@ bool GitService::runGit(const QString& workingDir, const QStringList& arguments,
 
   const bool success = process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0;
   if (!success) {
-    // qCWarning(logGitService) << "Git command failed" << arguments.join(' ') << combined;
+    qCWarning(logGitService) << "Git command failed" << arguments.join(' ') << combined;
   }
 
   return success;
