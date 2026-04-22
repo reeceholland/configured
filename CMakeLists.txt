@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.21)
-project(Configured LANGUAGES CXX VERSION 0.3.0)
+project(Configured LANGUAGES CXX VERSION 0.4.0)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
@@ -14,6 +14,9 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
 
 add_executable(Configured
     src/main.cpp
+
+    # src/app/AppLogger.cpp
+    # include/app/AppLogger.hpp
 
     src/app/MainWindow.cpp
     include/app/MainWindow.hpp
@@ -62,6 +65,12 @@ add_executable(Configured
 
     src/core/CloneWorker.cpp
     include/core/CloneWorker.hpp
+
+    src/core/GitPullWorker.cpp
+    include/core/GitPullWorker.hpp
+
+    src/ui/PullingDialog.cpp
+    include/ui/PullingDialog.hpp
 
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp

@@ -198,6 +198,10 @@ void EditorScreenWidget::addChildToSelected() {
   }
 
   selectedItem_->addChild(std::move(child));
+
+  selectedItem_->setIsDirty(true);
+  emit projectModified(selectedItem_);
+
   rebuildTree();
 }
 
@@ -216,6 +220,8 @@ void EditorScreenWidget::removeSelectedItem() {
   }
 
   parent->removeChild(selectedItem_);
+  parent->setIsDirty(true);
+  emit projectModified(parent);
   selectedItem_ = nullptr;
   rebuildTree();
 }
@@ -338,6 +344,10 @@ void EditorScreenWidget::applyEditorToSelectedItem() {
   if (currentTreeItem) {
     currentTreeItem->setText(0, selectedItem_->name());
   }
+
+  selectedItem_->setIsDirty(true);
+  refreshTreeItemState(selectedItem_);
+  emit projectModified(selectedItem_);
 }
 
 void EditorScreenWidget::setProjectName(const QString& name) {
@@ -467,4 +477,8 @@ void EditorScreenWidget::refreshTreeItemState(ConfiguredItem* item) {
   }
 
   applyTreeItemState(it.value(), item);
+}
+
+void EditorScreenWidget::refreshTree() {
+  rebuildTree();
 }

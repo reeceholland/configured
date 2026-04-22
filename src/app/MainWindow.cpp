@@ -29,6 +29,7 @@
 
 #include "core/CloneWorker.hpp"
 #include "core/ConfiguredProject.hpp"
+#include "core/GitPullWorker.hpp"
 #include "export/JsonProjectExporter.hpp"
 #include "export/XmlProjectExporter.hpp"
 #include "ui/ConnectingDialog.hpp"
@@ -37,6 +38,7 @@
 #include "ui/HelpScreenWidget.hpp"
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
+#include "ui/PullingDialog.hpp"
 #include "ui/RemoteConnectDialog.hpp"
 
 MainWindow::MainWindow() {
@@ -87,6 +89,9 @@ MainWindow::MainWindow() {
 
   projectDirtyStatusLabel_ = new QLabel(this);
   statusBar()->addPermanentWidget(projectDirtyStatusLabel_);
+
+  unpushedCommitsLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(unpushedCommitsLabel_);
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
@@ -191,6 +196,9 @@ MainWindow::MainWindow() {
     }
 
     QMessageBox::information(this, "Save Successful", "Project saved successfully.");
+    currentProject_->clearDirtyFlags();
+    editor_->refreshTree();
+    hasUnsavedChanges_ = false;
     updateWindowTitle();
     updateGitStatusBar();
   });
@@ -215,6 +223,10 @@ MainWindow::MainWindow() {
   });
 
   connect(projectMetadataAction_, &QAction::triggered, this, &MainWindow::editProjectMetadata);
+
+  connect(gitPullAction_, &QAction::triggered, this, [this]() {
+    promptAndGitPull();
+  });
 
   connect(home_, &HomeScreenWidget::openProjectRequested, this, [this]() {
     const QString filePath = QFileDialog::getOpenFileName(
@@ -265,6 +277,16 @@ MainWindow::MainWindow() {
 
   connect(home_, &HomeScreenWidget::connectRemoteRequested, this, [this]() {
     promptAndCloneRemoteProject();
+  });
+
+  connect(editor_, &EditorScreenWidget::projectModified, this, [this](ConfiguredItem* item) {
+    hasUnsavedChanges_ = true;
+
+    if (item) {
+      statusBar()->showMessage("Unsaved changes", 2000);
+    }
+
+    updateWindowTitle();
   });
 
   showHome();
@@ -350,15 +372,20 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 }
 
 void MainWindow::updateWindowTitle() {
+  QString title = "CONFIGURED";
+
   if (currentProject_) {
     const QString name = currentProject_->name().trimmed();
     if (!name.isEmpty()) {
-      setWindowTitle("CONFIGURED - " + name);
-      return;
+      title += " - " + name;
     }
   }
 
-  setWindowTitle("CONFIGURED");
+  if (hasUnsavedChanges_) {
+    title += " *";
+  }
+
+  setWindowTitle(title);
 }
 
 void MainWindow::promptAndCreateProject() {
@@ -653,6 +680,65 @@ void MainWindow::editProjectMetadata() {
   updateGitUiVisibility();
 }
 
+void MainWindow::promptAndGitPull() {
+  const QString workingDir = currentProjectWorkingDirectory();
+
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Git Pull", "Open a saved Git-managed project first.");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isGitAvailable(&output)) {
+    QMessageBox::warning(this, "Git Pull", "Git is not available.\n\n" + output);
+    return;
+  }
+
+  if (!gitService_.isRepository(workingDir, &output)) {
+    QMessageBox::warning(this, "Git Pull", "This folder is not a Git repository.");
+    return;
+  }
+
+  if (!gitService_.remoteExists(workingDir, "origin", &output)) {
+    QMessageBox::warning(this, "Git Pull", "No remote repository configured for this project.");
+    return;
+  }
+
+  auto* pullingDialog = new PullingDialog(this);
+  pullingDialog->setStatusText("Pulling remote changes...");
+
+  auto* thread = new QThread(this);
+  auto* worker = new GitPullWorker(workingDir);
+
+  worker->moveToThread(thread);
+
+  connect(thread, &QThread::started, worker, &GitPullWorker::start);
+  connect(pullingDialog, &PullingDialog::cancelRequested, worker, &GitPullWorker::cancel);
+  connect(worker, &GitPullWorker::outputReceived, pullingDialog, &PullingDialog::appendOutput);
+
+  connect(worker, &GitPullWorker::finished, this,
+          [this, pullingDialog, thread, worker](bool success, const QString& output) {
+            pullingDialog->appendOutput(output);
+            pullingDialog->accept();
+
+            thread->quit();
+            worker->deleteLater();
+            thread->deleteLater();
+            pullingDialog->deleteLater();
+
+            if (!success) {
+              QMessageBox::warning(this, "Git Pull", "Pull failed.\n\n" + output);
+              return;
+            }
+
+            QMessageBox::information(this, "Git Pull", "Pull completed successfully.");
+            updateGitStatusBar();
+          });
+
+  thread->start();
+  pullingDialog->exec();
+}
+
 void MainWindow::promptAndCloneRemoteProject() {
   RemoteConnectDialog dialog(this);
 
@@ -800,6 +886,37 @@ void MainWindow::updateRemoteUrlStatus() {
   }
 }
 
+void MainWindow::updateGitCommitStatus() {
+  if (!unpushedCommitsLabel_) {
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    unpushedCommitsLabel_->setText("");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isRepository(workingDir, &output)) {
+    unpushedCommitsLabel_->setText("");
+    return;
+  }
+
+  bool hasUnpushed = false;
+  if (gitService_.hasUnpushedCommits(workingDir, &hasUnpushed, &output)) {
+    if (hasUnpushed) {
+      unpushedCommitsLabel_->setText("Unpushed Commits");
+      unpushedCommitsLabel_->setStyleSheet("color: orange;");
+    } else {
+      unpushedCommitsLabel_->setText("All Commits Pushed");
+      unpushedCommitsLabel_->setStyleSheet("color: green;");
+    }
+  } else {
+    unpushedCommitsLabel_->setText("");
+  }
+}
+
 void MainWindow::updateBranchStatus() {
   if (!gitBranchLabel_) {
     return;
@@ -869,10 +986,14 @@ void MainWindow::updateGitStatusBar() {
     if (projectDirtyStatusLabel_) {
       projectDirtyStatusLabel_->clear();
     }
+    if (unpushedCommitsLabel_) {
+      unpushedCommitsLabel_->clear();
+    }
     return;
   }
 
   updateRemoteUrlStatus();
   updateBranchStatus();
   updateProjectDirtyStatus();
+  updateGitCommitStatus();
 }

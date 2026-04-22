@@ -199,6 +199,8 @@ class MainWindow : public QMainWindow {
    */
   void updateProjectDirtyStatus();
 
+  void updateGitCommitStatus();
+
   /**
    * @brief Update the entire Git status bar.
    *
@@ -207,6 +209,8 @@ class MainWindow : public QMainWindow {
    * such as committing.
    */
   void updateGitStatusBar();
+
+  void promptAndGitPull();
 
  private slots:
 
@@ -317,6 +321,8 @@ class MainWindow : public QMainWindow {
   /// @brief The label in the status bar that indicates if the project has uncommitted changes.
   QLabel* projectDirtyStatusLabel_ = nullptr;
 
+  QLabel* unpushedCommitsLabel_ = nullptr;
+
   /// @brief The Git service for handling Git operations.
   GitService gitService_;
 
@@ -328,4 +334,6 @@ class MainWindow : public QMainWindow {
 
   /// @brief The file path of the currently loaded project, if any.
   QString currentProjectFilePath_;
+
+  bool hasUnsavedChanges_ = false;
 };

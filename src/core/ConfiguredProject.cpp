@@ -176,6 +176,7 @@ bool ConfiguredProject::saveToFile(const QString& filePath, QString* error) {
   }
 
   file.write(doc.toJson(QJsonDocument::Indented));
+
   return true;
 }
 
@@ -334,5 +335,23 @@ void ConfiguredProject::collectParametersRecursive(const ConfiguredItem* item,
 
   for (const auto& child : item->children()) {
     collectParametersRecursive(child.get(), currentPath, out);
+  }
+}
+
+void ConfiguredProject::clearDirtyFlags() {
+  if (root_) {
+    clearDirtyFlagsRecursive(root_.get());
+  }
+}
+
+void ConfiguredProject::clearDirtyFlagsRecursive(ConfiguredItem* item) {
+  if (!item) {
+    return;
+  }
+
+  item->setIsDirty(false);
+
+  for (const auto& child : item->children()) {
+    clearDirtyFlagsRecursive(child.get());
   }
 }
