@@ -23,7 +23,7 @@ add_executable(ConfiguredTests
     ../src/core/ConfiguredProject.cpp
     ../src/core/ProjectService.cpp
     ../src/core/ProjectMetadataService.cpp
-    ../src/core/GitService.cpp
+    ../src/core/git/GitService.cpp
     ../src/core/validation/ValidationResult.cpp
     ../src/core/validation/metadata/ProjectMetadataValidator.cpp
     ../src/core/validation/metadata/ProjectMetadataValidators.cpp

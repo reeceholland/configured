@@ -36,8 +36,8 @@ add_executable(Configured
     src/ui/ProjectMetadataDialog.cpp
     include/ui/ProjectMetadataDialog.hpp
 
-    src/core/GitService.cpp
-    include/core/GitService.hpp
+    src/core/git/GitService.cpp
+    include/core/git/GitService.hpp
 
     src/ui/GitConfigDialog.cpp
     include/ui/GitConfigDialog.hpp
@@ -63,11 +63,11 @@ add_executable(Configured
     src/ui/ConnectingDialog.cpp
     include/ui/ConnectingDialog.hpp
 
-    src/core/CloneWorker.cpp
-    include/core/CloneWorker.hpp
+    src/core/git/CloneWorker.cpp
+    include/core/git/CloneWorker.hpp
 
-    src/core/GitPullWorker.cpp
-    include/core/GitPullWorker.hpp
+    src/core/git/GitPullWorker.cpp
+    include/core/git/GitPullWorker.hpp
 
     src/ui/PullingDialog.cpp
     include/ui/PullingDialog.hpp

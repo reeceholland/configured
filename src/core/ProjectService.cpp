@@ -4,7 +4,7 @@
 #include <QFileInfo>
 
 #include "core/ConfiguredProject.hpp"
-#include "core/GitService.hpp"
+#include "core/git/GitService.hpp"
 #include "core/ProjectMetadataService.hpp"
 #include "core/validation/metadata/ProjectMetadataValidator.hpp"
 #include "core/validation/project/ProjectValidator.hpp"

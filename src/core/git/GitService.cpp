@@ -1,4 +1,4 @@
-#include "core/GitService.hpp"
+#include "core/git/GitService.hpp"
 
 #include <QDir>
 #include <QLoggingCategory>

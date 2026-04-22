@@ -27,9 +27,9 @@
 #include <QToolBar>
 #include <QToolButton>
 
-#include "core/CloneWorker.hpp"
+#include "core/git/CloneWorker.hpp"
 #include "core/ConfiguredProject.hpp"
-#include "core/GitPullWorker.hpp"
+#include "core/git/GitPullWorker.hpp"
 #include "export/JsonProjectExporter.hpp"
 #include "export/XmlProjectExporter.hpp"
 #include "ui/ConnectingDialog.hpp"
@@ -719,24 +719,45 @@ void MainWindow::promptAndGitPull() {
   connect(worker, &GitPullWorker::finished, this,
           [this, pullingDialog, thread, worker](bool success, const QString& output) {
             pullingDialog->appendOutput(output);
-            pullingDialog->accept();
 
             thread->quit();
             worker->deleteLater();
             thread->deleteLater();
-            pullingDialog->deleteLater();
 
             if (!success) {
-              QMessageBox::warning(this, "Git Pull", "Pull failed.\n\n" + output);
+              pullingDialog->setStatusText("Pull failed. Review the output below.");
               return;
             }
 
-            QMessageBox::information(this, "Git Pull", "Pull completed successfully.");
+            pullingDialog->setStatusText("Pull completed successfully.");
+
+            QString reloadError;
+            auto reloadedProject = projectService_.loadProject(currentProjectFilePath_, reloadError);
+            if (!reloadedProject) {
+              pullingDialog->setStatusText(
+                  "Pull completed, but the project could not be reloaded.");
+              QMessageBox::warning(this, "Git Pull",
+                                   "Pull completed, but the project could not be reloaded.\n\n"
+                                       + reloadError);
+              return;
+            }
+
+            currentProject_ = std::move(reloadedProject);
+            currentProject_->clearDirtyFlags();
+            hasUnsavedChanges_ = false;
+            editor_->setProject(currentProject_.get());
+            updateWindowTitle();
+            updateGitUiVisibility();
             updateGitStatusBar();
+
+            QMessageBox::information(this, "Git Pull", "Pull completed successfully.");
+
+            pullingDialog->accept();
           });
 
   thread->start();
   pullingDialog->exec();
+  pullingDialog->deleteLater();
 }
 
 void MainWindow::promptAndCloneRemoteProject() {
@@ -852,7 +873,7 @@ void MainWindow::onGitConnectRemote() {
   }
 
   if (!gitService_.connectRemote(workingDir, "origin", remoteUrl.trimmed(), &output)) {
-    QMessageBox::warning(this, "Connect Remote", output);
+    QMessageBox::warning(this, "Connect Remote ", output);
     return;
   }
 
@@ -882,7 +903,7 @@ void MainWindow::updateRemoteUrlStatus() {
   if (gitService_.remoteUrl(workingDir, "origin", &remoteUrl, &output)) {
     remoteUrlStatusLabel_->setText("Remote: " + remoteUrl);
   } else {
-    remoteUrlStatusLabel_->setText("Remote: Not Connected");
+    remoteUrlStatusLabel_->setText("Remote: Not Connected, ");
   }
 }
 

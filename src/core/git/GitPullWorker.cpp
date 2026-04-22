@@ -1,4 +1,4 @@
-#include "core/GitPullWorker.hpp"
+#include "core/git/GitPullWorker.hpp"
 
 #include <QProcess>
 

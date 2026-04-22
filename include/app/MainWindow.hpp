@@ -14,7 +14,7 @@
 
 #include <QMainWindow>
 
-#include "core/GitService.hpp"
+#include "core/git/GitService.hpp"
 #include "core/ProjectService.hpp"
 
 class QStackedWidget;
