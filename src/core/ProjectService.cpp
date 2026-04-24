@@ -2,12 +2,15 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QLoggingCategory>
 
 #include "core/ConfiguredProject.hpp"
-#include "core/git/GitService.hpp"
 #include "core/ProjectMetadataService.hpp"
+#include "core/git/GitService.hpp"
 #include "core/validation/metadata/ProjectMetadataValidator.hpp"
 #include "core/validation/project/ProjectValidator.hpp"
+
+Q_LOGGING_CATEGORY(logProjectService, "configured.core.projectservice")
 
 ProjectService::ProjectService(GitService* gitService) : gitService_(gitService) {}
 
@@ -154,8 +157,11 @@ std::unique_ptr<ConfiguredProject> ProjectService::loadProject(const QString& pr
 
   auto project = std::make_unique<ConfiguredProject>();
 
-  if (!project->loadFromFile(projectFilePath)) {
-    error = "Could not load project file.";
+  QString loadError;
+  if (!project->loadFromFile(projectFilePath, &loadError)) {
+    error = "Could not load project file. " + (loadError.isEmpty() ? QString() : loadError);
+    qCCritical(logProjectService) << "Failed to load project from" << projectFilePath << ":"
+                                  << loadError;
     return nullptr;
   }
 

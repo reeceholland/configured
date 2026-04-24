@@ -38,10 +38,17 @@
 #include "ui/GitConfigDialog.hpp"
 #include "ui/HelpScreenWidget.hpp"
 #include "ui/HomeScreenWidget.hpp"
+#include "ui/NewProjectGitWizard.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
+#include "ui/PullPreflightDialog.hpp"
 #include "ui/PullingDialog.hpp"
 #include "ui/PushingDialog.hpp"
 #include "ui/RemoteConnectDialog.hpp"
+
+namespace {
+constexpr auto kGitPullTitle = "Git Pull";
+constexpr auto kGitPushTitle = "Git Push";
+}  // namespace
 
 MainWindow::MainWindow() {
   setWindowTitle("CONFIGURED");
@@ -81,8 +88,8 @@ MainWindow::MainWindow() {
   gitCommitAction_ = new QAction("Git Commit", this);
   gitConfigAction_ = new QAction("Git Identity", this);
   gitConnectRemoteAction_ = new QAction("Connect Remote", this);
-  gitPullAction_ = new QAction("Git Pull", this);
-  gitPushAction_ = new QAction("Git Push", this);
+  gitPullAction_ = new QAction(kGitPullTitle, this);
+  gitPushAction_ = new QAction(kGitPushTitle, this);
 
   remoteUrlStatusLabel_ = new QLabel(this);
   statusBar()->addPermanentWidget(remoteUrlStatusLabel_);
@@ -163,16 +170,6 @@ MainWindow::MainWindow() {
   gitButton_->setPopupMode(QToolButton::InstantPopup);
   gitButtonAction_ = toolbar_->addWidget(gitButton_);
 
-  auto* aboutMenu = new QMenu(this);
-  aboutMenu->addAction(versionAction_);
-  aboutMenu->addAction(helpAction_);
-
-  auto* aboutButton = new QToolButton(this);
-  aboutButton->setText("About");
-  aboutButton->setMenu(aboutMenu);
-  aboutButton->setPopupMode(QToolButton::InstantPopup);
-  toolbar_->addWidget(aboutButton);
-
   auto* exportMenu = new QMenu(this);
   exportMenu->addAction(exportXmlAction_);
   exportMenu->addAction(exportJsonAction_);
@@ -182,6 +179,16 @@ MainWindow::MainWindow() {
   exportButton->setMenu(exportMenu);
   exportButton->setPopupMode(QToolButton::InstantPopup);
   toolbar_->addWidget(exportButton);
+
+  auto* aboutMenu = new QMenu(this);
+  aboutMenu->addAction(versionAction_);
+  aboutMenu->addAction(helpAction_);
+
+  auto* aboutButton = new QToolButton(this);
+  aboutButton->setText("About");
+  aboutButton->setMenu(aboutMenu);
+  aboutButton->setPopupMode(QToolButton::InstantPopup);
+  toolbar_->addWidget(aboutButton);
 
   connect(helpAction_, &QAction::triggered, this, [this]() {
     showHelp();
@@ -480,8 +487,79 @@ void MainWindow::promptAndCreateProject() {
   updateWindowTitle();
   updateGitUiVisibility();
   showEditor();
-}
 
+  if (!currentProject_ || !currentProject_->isGitManaged()) {
+    return;
+  }
+
+  const QString workingDir = currentProjectWorkingDirectory();
+  if (workingDir.isEmpty()) {
+    QMessageBox::warning(this, "Git Setup", "Could not determine project working directory.");
+    return;
+  }
+
+  NewProjectGitWizard wizard(workingDir, &gitService_, this);
+  if (wizard.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  const NewProjectGitWizard::State state = wizard.state();
+
+  QString output;
+
+  if (!state.userName.trimmed().isEmpty()) {
+    if (!gitService_.setConfigValue(workingDir, "user.name", state.userName,
+                                    state.useGlobalIdentity, &output)) {
+      QMessageBox::warning(this, "Git Setup", "Failed to set Git user name.\n\n" + output);
+    }
+  }
+
+  if (!state.userEmail.trimmed().isEmpty()) {
+    if (!gitService_.setConfigValue(workingDir, "user.email", state.userEmail,
+                                    state.useGlobalIdentity, &output)) {
+      QMessageBox::warning(this, "Git Setup", "Failed to set Git user email.\n\n" + output);
+    }
+  }
+
+  if (state.createInitialCommit) {
+    if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, output)) {
+      QMessageBox::warning(this, "Git Setup",
+                           "Failed to save project before initial commit.\n\n" + output);
+      return;
+    }
+
+    if (!gitService_.addAll(workingDir, &output)) {
+      QMessageBox::warning(this, "Git Setup",
+                           "Failed to stage files for initial commit.\n\n" + output);
+      return;
+    }
+
+    if (!gitService_.commit(workingDir, state.commitMessage.trimmed(), &output)) {
+      QMessageBox::warning(this, "Git Setup", "Failed to create initial commit.\n\n" + output);
+      return;
+    }
+
+    QString hash;
+    QString hashOutput;
+    if (gitService_.getCommitHash(workingDir, &hash, &hashOutput) && currentProject_) {
+      currentProject_->setGitCommitHash(hash);
+    }
+  }
+  if (state.connectRemote) {
+    if (!gitService_.connectRemote(workingDir, state.remoteName.trimmed(),
+                                   state.remoteUrl.trimmed(), &output)) {
+      QMessageBox::warning(this, "Git Setup", "Could not connect remote repository.\n\n" + output);
+      return;
+    }
+  }
+
+  if (state.pushAfterSetup) {
+    promptAndGitPush();
+    return;
+  }
+
+  updateGitStatusBar();
+}
 void MainWindow::updateGitUiVisibility() {
   if (!gitButton_) {
     return;
@@ -731,35 +809,35 @@ void MainWindow::promptAndGitPush() {
   const QString workingDir = currentProjectWorkingDirectory();
 
   if (workingDir.isEmpty()) {
-    QMessageBox::information(this, "Git Push", "Open a saved Git-managed project first.");
+    QMessageBox::information(this, kGitPushTitle, "Open a saved Git-managed project first.");
     return;
   }
 
   QString output;
   if (!gitService_.isGitAvailable(&output)) {
-    QMessageBox::warning(this, "Git Push", "Git is not available.\n\n" + output);
+    QMessageBox::warning(this, kGitPushTitle, "Git is not available.\n\n" + output);
     return;
   }
 
   if (!gitService_.isRepository(workingDir, &output)) {
-    QMessageBox::warning(this, "Git Push", "This folder is not a Git repository.");
+    QMessageBox::warning(this, kGitPushTitle, "This folder is not a Git repository.");
     return;
   }
 
   if (!gitService_.remoteExists(workingDir, "origin", &output)) {
-    QMessageBox::warning(this, "Git Push", "No remote repository configured for this project.");
+    QMessageBox::warning(this, kGitPushTitle, "No remote repository configured for this project.");
     return;
   }
 
   QString branchName;
   if (!gitService_.currentBranch(workingDir, &branchName, &output) || branchName.isEmpty()) {
-    QMessageBox::warning(this, "Git Push", "Could not determine current branch.\n\n" + output);
+    QMessageBox::warning(this, kGitPushTitle, "Could not determine current branch.\n\n" + output);
     return;
   }
 
   bool hasUpstream = false;
   if (!gitService_.hasUpstream(workingDir, &hasUpstream, &output)) {
-    QMessageBox::warning(this, "Git Push", "Could not check upstream branch.\n\n" + output);
+    QMessageBox::warning(this, kGitPushTitle, "Could not check upstream branch.\n\n" + output);
     return;
   }
 
@@ -806,23 +884,48 @@ void MainWindow::promptAndGitPull() {
   const QString workingDir = currentProjectWorkingDirectory();
 
   if (workingDir.isEmpty()) {
-    QMessageBox::information(this, "Git Pull", "Open a saved Git-managed project first.");
+    QMessageBox::information(this, kGitPullTitle, "Open a saved Git-managed project first.");
     return;
   }
 
   QString output;
   if (!gitService_.isGitAvailable(&output)) {
-    QMessageBox::warning(this, "Git Pull", "Git is not available.\n\n" + output);
+    QMessageBox::warning(this, kGitPullTitle, "Git is not available.\n\n" + output);
     return;
   }
 
   if (!gitService_.isRepository(workingDir, &output)) {
-    QMessageBox::warning(this, "Git Pull", "This folder is not a Git repository.");
+    QMessageBox::warning(this, kGitPullTitle, "This folder is not a Git repository.");
     return;
   }
 
   if (!gitService_.remoteExists(workingDir, "origin", &output)) {
-    QMessageBox::warning(this, "Git Pull", "No remote repository configured for this project.");
+    QMessageBox::warning(this, kGitPullTitle, "No remote repository configured for this project.");
+    return;
+  }
+
+  QString branchName;
+  gitService_.currentBranch(workingDir, &branchName, &output);
+
+  bool clean = true;
+  gitService_.workingTreeClean(workingDir, &clean, &output);
+
+  bool hasUpstream = false;
+  gitService_.hasUpstream(workingDir, &hasUpstream, &output);
+
+  bool hasUnpushedCommits = false;
+  gitService_.hasUnpushedCommits(workingDir, &hasUnpushedCommits, &output);
+
+  PullPreflightDialog::State state;
+  state.hasUnsavedEditorChanges = hasUnsavedChanges_;
+  state.hasUncommittedGitChanges = !clean;
+  state.hasUnpushedCommits = hasUnpushedCommits;
+  state.branchName = branchName;
+  state.upstreamName = hasUpstream ? "origin/" + branchName : QString();
+
+  PullPreflightDialog dialog(state, this);
+
+  if (dialog.exec() != QDialog::Accepted) {
     return;
   }
 
@@ -859,7 +962,7 @@ void MainWindow::promptAndGitPull() {
         if (!reloadedProject) {
           pullingDialog->setStatusText("Pull completed, but the project could not be reloaded.");
           QMessageBox::warning(
-              this, "Git Pull",
+              this, kGitPullTitle,
               "Pull completed, but the project could not be reloaded.\n\n" + reloadError);
           return;
         }
@@ -872,7 +975,7 @@ void MainWindow::promptAndGitPull() {
         updateGitUiVisibility();
         updateGitStatusBar();
 
-        QMessageBox::information(this, "Git Pull", "Pull completed successfully.");
+        QMessageBox::information(this, kGitPullTitle, "Pull completed successfully.");
 
         pullingDialog->accept();
       });

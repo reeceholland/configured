@@ -78,6 +78,12 @@ add_executable(Configured
     src/ui/PushingDialog.cpp
     include/ui/PushingDialog.hpp
 
+    src/ui/PullPreflightDialog.cpp
+    include/ui/PullPreflightDialog.hpp
+
+    src/ui/NewProjectGitWizard.cpp
+    include/ui/NewProjectGitWizard.hpp
+
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp
     src/core/validation/metadata/ProjectMetadataValidators.cpp

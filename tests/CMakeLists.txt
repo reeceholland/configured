@@ -18,6 +18,7 @@ add_executable(ConfiguredTests
     test_validation.cpp
     test_project_service.cpp
     test_project_validator.cpp
+    test_git_service.cpp
 
     ../src/core/ConfiguredItem.cpp
     ../src/core/ConfiguredProject.cpp
@@ -31,6 +32,10 @@ add_executable(ConfiguredTests
     ../src/core/validation/item/ItemValidators.cpp
     ../src/core/validation/project/ProjectValidator.cpp
 )
+
+if (MSVC)
+    target_compile_options(ConfiguredTests PRIVATE /EHsc)
+endif()
 
 target_include_directories(ConfiguredTests PRIVATE
     ${CMAKE_SOURCE_DIR}/include

@@ -280,6 +280,8 @@ class GitService {
    */
   bool hasUpstream(const QString& workingDir, bool* hasUpstream, QString* output = nullptr) const;
 
+  bool fetch(const QString& workingDir, QString* output = nullptr) const;
+
  private:
   /**
    * @brief Run a Git command in the specified working directory.

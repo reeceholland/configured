@@ -208,7 +208,6 @@ bool GitService::workingTreeClean(const QString& workingDir, bool* clean, QStrin
   if (output) {
     *output = statusOutput;
   }
-
   return true;
 }
 
@@ -338,4 +337,8 @@ bool GitService::hasUpstream(const QString& workingDir, bool* hasUpstream, QStri
 
   *hasUpstream = ok;
   return true;
+}
+
+bool GitService::fetch(const QString& workingDir, QString* output) const {
+  return runGit(workingDir, {"fetch"}, output);
 }
