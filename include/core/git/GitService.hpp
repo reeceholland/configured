@@ -237,6 +237,18 @@ class GitService {
   bool currentBranch(const QString& workingDir, QString* branchName,
                      QString* output = nullptr) const;
 
+  bool listLocalBranches(const QString& workingDir, QStringList* branches,
+                         QString* output = nullptr) const;
+
+  bool listRemoteBranches(const QString& workingDir, QStringList* branches,
+                          QString* output = nullptr) const;
+
+  bool switchBranch(const QString& workingDir, const QString& branchName,
+                    QString* output = nullptr) const;
+
+  bool switchToRemoteBranch(const QString& workingDir, const QString& remoteBranchName,
+                            QString* output = nullptr) const;
+
   /**
    * @brief Check if the working tree is clean.
    *

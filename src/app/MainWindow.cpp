@@ -88,6 +88,7 @@ MainWindow::MainWindow() {
   gitCommitAction_ = new QAction("Git Commit", this);
   gitConfigAction_ = new QAction("Git Identity", this);
   gitConnectRemoteAction_ = new QAction("Connect Remote", this);
+  gitSwitchBranchAction_ = new QAction("Switch Branch", this);
   gitPullAction_ = new QAction(kGitPullTitle, this);
   gitPushAction_ = new QAction(kGitPushTitle, this);
 
@@ -157,6 +158,7 @@ MainWindow::MainWindow() {
 
   auto* gitMenu = new QMenu(this);
   gitMenu->addAction(gitConnectRemoteAction_);
+  gitMenu->addAction(gitSwitchBranchAction_);
   gitMenu->addAction(gitPullAction_);
   gitMenu->addAction(gitPushAction_);
   gitMenu->addSeparator();
@@ -307,6 +309,7 @@ MainWindow::MainWindow() {
   });
 
   connect(gitConnectRemoteAction_, &QAction::triggered, this, &MainWindow::onGitConnectRemote);
+  connect(gitSwitchBranchAction_, &QAction::triggered, this, &MainWindow::onGitSwitchBranch);
 
   connect(gitStatusAction_, &QAction::triggered, this, &MainWindow::onGitStatus);
 
@@ -418,6 +421,10 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 
   if (gitPullAction_) {
     gitPullAction_->setEnabled(enabled);
+  }
+
+  if (gitSwitchBranchAction_) {
+    gitSwitchBranchAction_->setEnabled(enabled);
   }
 
   if (gitRefreshButton_) {
@@ -1105,6 +1112,121 @@ void MainWindow::onGitConnectRemote() {
   QMessageBox::information(this, "Connect Remote", "Remote repository connected.");
 
   updateGitStatusBar();
+}
+
+void MainWindow::onGitSwitchBranch() {
+  const QString workingDir = currentProjectWorkingDirectory();
+
+  if (workingDir.isEmpty()) {
+    QMessageBox::information(this, "Switch Branch", "Open a saved Git-managed project first.");
+    return;
+  }
+
+  QString output;
+  if (!gitService_.isRepository(workingDir, &output)) {
+    QMessageBox::warning(this, "Switch Branch", "This folder is not a Git repository.");
+    return;
+  }
+
+  bool clean = false;
+  if (!gitService_.workingTreeClean(workingDir, &clean, &output)) {
+    QMessageBox::warning(this, "Switch Branch",
+                         "Could not determine working tree state.\n\n" + output);
+    return;
+  }
+
+  if (hasUnsavedChanges_ || !clean) {
+    QMessageBox::warning(this, "Switch Branch",
+                         "Save or commit your changes before switching branches.");
+    return;
+  }
+
+  QString fetchOutput;
+  if (!gitService_.fetch(workingDir, &fetchOutput)) {
+    // Not critical if fetch fails, so just show a warning and continue with whatever branch info we
+    // have.
+    QMessageBox::warning(
+        this, "Switch Branch",
+        "Failed to fetch latest branch information from remote.\n\n" + fetchOutput);
+  }
+
+  QStringList localBranches;
+  if (!gitService_.listLocalBranches(workingDir, &localBranches, &output)
+      || localBranches.isEmpty()) {
+    QMessageBox::warning(this, "Switch Branch", "Could not list local branches.\n\n" + output);
+    return;
+  }
+
+  QStringList remoteBranches;
+  if (!gitService_.listRemoteBranches(workingDir, &remoteBranches, &output)) {
+    remoteBranches.clear();
+  }
+
+  QString currentBranch;
+  if (!gitService_.currentBranch(workingDir, &currentBranch, &output) || currentBranch.isEmpty()) {
+    QMessageBox::warning(this, "Switch Branch", "Could not determine current branch.\n\n" + output);
+    return;
+  }
+
+  QStringList branchChoices = localBranches;
+  for (const QString& remoteBranch : remoteBranches) {
+    if (!branchChoices.contains(remoteBranch)) {
+      branchChoices.append(remoteBranch);
+    }
+  }
+
+  bool ok = false;
+  const QString selectedBranch =
+      QInputDialog::getItem(this, "Switch Branch", "Branch:", branchChoices,
+                            branchChoices.indexOf(currentBranch), false, &ok);
+
+  if (!ok || selectedBranch.trimmed().isEmpty() || selectedBranch == currentBranch) {
+    return;
+  }
+
+  const bool selectedRemoteBranch =
+      remoteBranches.contains(selectedBranch) && !localBranches.contains(selectedBranch);
+  const bool switchOk = selectedRemoteBranch
+                            ? gitService_.switchToRemoteBranch(workingDir, selectedBranch, &output)
+                            : gitService_.switchBranch(workingDir, selectedBranch, &output);
+
+  if (!switchOk) {
+    QMessageBox::warning(this, "Switch Branch", "Could not switch branch.\n\n" + output);
+    return;
+  }
+
+  QString reloadedProjectPath = currentProjectFilePath_;
+  if (!QFileInfo::exists(reloadedProjectPath)) {
+    reloadedProjectPath = findConfiguredFile(workingDir);
+  }
+
+  if (reloadedProjectPath.trimmed().isEmpty()) {
+    QMessageBox::warning(this, "Switch Branch",
+                         "Branch switched, but no .configured project file could be found.");
+    updateGitStatusBar();
+    return;
+  }
+
+  QString reloadError;
+  auto reloadedProject = projectService_.loadProject(reloadedProjectPath, reloadError);
+  if (!reloadedProject) {
+    QMessageBox::warning(
+        this, "Switch Branch",
+        "Branch switched, but the project could not be reloaded.\n\n" + reloadError);
+    updateGitStatusBar();
+    return;
+  }
+
+  currentProject_ = std::move(reloadedProject);
+  currentProjectFilePath_ = reloadedProjectPath;
+  currentProject_->clearDirtyFlags();
+  hasUnsavedChanges_ = false;
+  editor_->setProject(currentProject_.get());
+  updateWindowTitle();
+  updateGitUiVisibility();
+  updateGitStatusBar();
+
+  QMessageBox::information(this, "Switch Branch", "Switched to branch '" + selectedBranch + "'.");
 }
 
 void MainWindow::updateRemoteUrlStatus() {

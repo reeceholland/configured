@@ -243,6 +243,93 @@ bool GitService::currentBranch(const QString& workingDir, QString* branchName,
   return ok;
 }
 
+bool GitService::listLocalBranches(const QString& workingDir, QStringList* branches,
+                                   QString* output) const {
+  if (branches) {
+    branches->clear();
+  }
+
+  QString result;
+  const bool ok = runGit(workingDir, {"branch", "--format=%(refname:short)"}, &result);
+
+  if (output) {
+    *output = result;
+  }
+
+  if (!ok) {
+    return false;
+  }
+
+  if (branches) {
+    const QStringList lines = result.split('\n', Qt::SkipEmptyParts);
+    for (const QString& line : lines) {
+      const QString branch = line.trimmed();
+      if (!branch.isEmpty()) {
+        branches->append(branch);
+      }
+    }
+  }
+
+  return true;
+}
+
+bool GitService::listRemoteBranches(const QString& workingDir, QStringList* branches,
+                                    QString* output) const {
+  if (branches) {
+    branches->clear();
+  }
+
+  QString result;
+  const bool ok = runGit(workingDir, {"branch", "--remotes", "--format=%(refname:short)"}, &result);
+
+  if (output) {
+    *output = result;
+  }
+
+  if (!ok) {
+    return false;
+  }
+
+  if (branches) {
+    const QStringList lines = result.split('\n', Qt::SkipEmptyParts);
+    for (const QString& line : lines) {
+      const QString branch = line.trimmed();
+      if (branch.isEmpty() || branch.endsWith("/HEAD")) {
+        continue;
+      }
+      branches->append(branch);
+    }
+  }
+
+  return true;
+}
+
+bool GitService::switchBranch(const QString& workingDir, const QString& branchName,
+                              QString* output) const {
+  const QString trimmedBranchName = branchName.trimmed();
+  if (trimmedBranchName.isEmpty()) {
+    if (output) {
+      *output = "Branch name is empty.";
+    }
+    return false;
+  }
+
+  return runGit(workingDir, {"switch", trimmedBranchName}, output);
+}
+
+bool GitService::switchToRemoteBranch(const QString& workingDir, const QString& remoteBranchName,
+                                      QString* output) const {
+  const QString trimmedBranchName = remoteBranchName.trimmed();
+  if (trimmedBranchName.isEmpty()) {
+    if (output) {
+      *output = "Remote branch name is empty.";
+    }
+    return false;
+  }
+
+  return runGit(workingDir, {"switch", "--track", trimmedBranchName}, output);
+}
+
 bool GitService::hasUnpushedCommits(const QString& workingDir, bool* hasUnpushedCommits,
                                     QString* output) const {
   if (!hasUnpushedCommits) {

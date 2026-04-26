@@ -262,6 +262,8 @@ class MainWindow : public QMainWindow {
    */
   void onGitConnectRemote();
 
+  void onGitSwitchBranch();
+
  private:
   /// @brief The main stacked widget that holds the different screens (home, editor, help).
   QStackedWidget* stack_ = nullptr;
@@ -328,6 +330,8 @@ class MainWindow : public QMainWindow {
 
   /// @brief The Git pull action.
   QAction* gitPullAction_ = nullptr;
+
+  QAction* gitSwitchBranchAction_ = nullptr;
 
   QAction* gitPushAction_ = nullptr;
 
