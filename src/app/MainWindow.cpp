@@ -26,6 +26,7 @@
 #include <QToolButton>
 
 #include "app/GitWorkflowController.hpp"
+#include "app/StatusBarController.hpp"
 #include "core/ConfiguredProject.hpp"
 #include "core/git/CloneWorker.hpp"
 #include "export/JsonProjectExporter.hpp"
@@ -161,6 +162,11 @@ MainWindow::MainWindow() {
       border: none;
     }
   )");
+
+  statusBarController_ = std::make_unique<StatusBarController>(&gitService_, this);
+  statusBarController_->setWidgets({statusBar(), remoteUrlStatusLabel_, gitBranchLabel_,
+                                    projectDirtyStatusLabel_, unpushedCommitsLabel_,
+                                    gitRefreshButton_});
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
@@ -812,155 +818,14 @@ QString MainWindow::findConfiguredFile(const QString& folderPath) const {
   return {};
 }
 
-void MainWindow::updateRemoteUrlStatus() {
-  if (!remoteUrlStatusLabel_) {
-    return;
-  }
-
-  const QString workingDir = currentProjectWorkingDirectory();
-  if (workingDir.isEmpty()) {
-    remoteUrlStatusLabel_->setText("Remote: Not Connected");
-    return;
-  }
-
-  QString output;
-  if (!gitService_.isRepository(workingDir, &output)) {
-    remoteUrlStatusLabel_->setText("Remote: Not Connected");
-    return;
-  }
-
-  QString remoteUrl;
-  if (gitService_.remoteUrl(workingDir, "origin", &remoteUrl, &output)) {
-    remoteUrlStatusLabel_->setText("Remote: " + remoteUrl);
-  } else {
-    remoteUrlStatusLabel_->setText("Remote: Not Connected, ");
-  }
-}
-
-void MainWindow::updateGitCommitStatus() {
-  if (!unpushedCommitsLabel_) {
-    return;
-  }
-
-  const QString workingDir = currentProjectWorkingDirectory();
-  if (workingDir.isEmpty()) {
-    unpushedCommitsLabel_->setText("");
-    return;
-  }
-
-  QString output;
-  if (!gitService_.isRepository(workingDir, &output)) {
-    unpushedCommitsLabel_->setText("");
-    return;
-  }
-
-  bool hasUpstream = false;
-  if (!gitService_.hasUpstream(workingDir, &hasUpstream, &output)) {
-    unpushedCommitsLabel_->setText("");
-    return;
-  }
-
-  if (!hasUpstream) {
-    unpushedCommitsLabel_->setText("First Push Needed");
-    unpushedCommitsLabel_->setStyleSheet("color: orange;");
-    return;
-  }
-
-  bool hasUnpushed = false;
-  if (gitService_.hasUnpushedCommits(workingDir, &hasUnpushed, &output)) {
-    if (hasUnpushed) {
-      unpushedCommitsLabel_->setText("Unpushed Commits");
-      unpushedCommitsLabel_->setStyleSheet("color: orange;");
-    } else {
-      unpushedCommitsLabel_->setText("All Commits Pushed");
-      unpushedCommitsLabel_->setStyleSheet("color: green;");
-    }
-  } else {
-    unpushedCommitsLabel_->setText("");
-  }
-}
-
-void MainWindow::updateBranchStatus() {
-  if (!gitBranchLabel_) {
-    return;
-  }
-
-  const QString workingDir = currentProjectWorkingDirectory();
-  if (workingDir.isEmpty()) {
-    gitBranchLabel_->setText("");
-    return;
-  }
-
-  QString output;
-  if (!gitService_.isRepository(workingDir, &output)) {
-    gitBranchLabel_->setText("");
-    return;
-  }
-
-  QString branchName;
-  if (gitService_.currentBranch(workingDir, &branchName, &output)) {
-    gitBranchLabel_->setText(branchName.isEmpty() ? "" : "Branch: " + branchName);
-  } else {
-    gitBranchLabel_->setText("");
-  }
-}
-
-void MainWindow::updateProjectDirtyStatus() {
-  if (!projectDirtyStatusLabel_) {
-    return;
-  }
-
-  const QString workingDir = currentProjectWorkingDirectory();
-  if (workingDir.isEmpty()) {
-    projectDirtyStatusLabel_->setText("");
-    return;
-  }
-
-  QString output;
-  if (!gitService_.isRepository(workingDir, &output)) {
-    projectDirtyStatusLabel_->setText("");
-    return;
-  }
-  bool clean = false;
-  if (gitService_.workingTreeClean(workingDir, &clean, &output)) {
-    if (clean) {
-      projectDirtyStatusLabel_->setText("Project: Clean");
-      projectDirtyStatusLabel_->setStyleSheet("color: green;");
-    } else {
-      projectDirtyStatusLabel_->setText("Project: Dirty");
-      projectDirtyStatusLabel_->setStyleSheet("color: orange;");
-    }
-  }
-}
-
 void MainWindow::updateGitStatusBar() {
-  const bool showStatus = stack_ && stack_->currentWidget() == editor_ && currentProject_
-                          && currentProject_->isGitManaged();
-
-  statusBar()->setVisible(showStatus);
-
-  if (gitRefreshButton_) {
-    gitRefreshButton_->setVisible(showStatus);
-  }
-
-  if (!showStatus) {
-    if (remoteUrlStatusLabel_) {
-      remoteUrlStatusLabel_->clear();
-    }
-    if (gitBranchLabel_) {
-      gitBranchLabel_->clear();
-    }
-    if (projectDirtyStatusLabel_) {
-      projectDirtyStatusLabel_->clear();
-    }
-    if (unpushedCommitsLabel_) {
-      unpushedCommitsLabel_->clear();
-    }
+  if (!statusBarController_) {
     return;
   }
 
-  updateRemoteUrlStatus();
-  updateBranchStatus();
-  updateProjectDirtyStatus();
-  updateGitCommitStatus();
+  statusBarController_->setContext({currentProject_.get(), currentProjectFilePath_,
+                                    hasUnsavedChanges_,
+                                    stack_ && stack_->currentWidget() == editor_});
+
+  statusBarController_->refresh();
 }

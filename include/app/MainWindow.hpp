@@ -27,6 +27,7 @@ class EditorScreenWidget;
 class HelpScreenWidget;
 class QLabel;
 class GitWorkflowController;
+class StatusBarController;
 
 /**
  * @brief Main window of the Configured application.
@@ -178,37 +179,6 @@ class MainWindow : public QMainWindow {
   QString findConfiguredFile(const QString& folderPath) const;
 
   /**
-   * @brief Update the remote URL status in the Git status bar.
-   *
-   * Updates the Git status bar to display the current remote URL of the Git repository.
-   *
-   */
-  void updateRemoteUrlStatus();
-
-  /**
-   * @brief Update the current Git branch status in the Git status bar.
-   *
-   * Updates the Git status bar to display the name of the current Git branch for the loaded
-   * project.
-   */
-  void updateBranchStatus();
-
-  /**
-   * @brief Update the project dirty status in the Git status bar.
-   *
-   * Updates the Git status bar to indicate whether the current project has uncommitted changes.
-   */
-  void updateProjectDirtyStatus();
-
-  /**
-   * @brief Update the unpushed commits status in the Git status bar.
-   *
-   * Updates the Git status bar to indicate whether the current project has commits that have not
-   * been pushed to a remote repository.
-   */
-  void updateGitCommitStatus();
-
-  /**
    * @brief Update the entire Git status bar.
    *
    * Refreshes all Git-related status indicators in the status bar, including remote URL, branch
@@ -324,4 +294,6 @@ class MainWindow : public QMainWindow {
   QToolButton* gitRefreshButton_ = nullptr;
 
   std::unique_ptr<GitWorkflowController> gitWorkflowController_;
+
+  std::unique_ptr<StatusBarController> statusBarController_;
 };

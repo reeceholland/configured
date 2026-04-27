@@ -87,6 +87,9 @@ add_executable(Configured
     src/app/GitWorkflowController.cpp
     include/app/GitWorkflowController.hpp
 
+    src/app/StatusBarController.cpp
+    include/app/StatusBarController.hpp
+
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp
     src/core/validation/metadata/ProjectMetadataValidators.cpp
