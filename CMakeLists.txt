@@ -84,6 +84,9 @@ add_executable(Configured
     src/ui/NewProjectGitWizard.cpp
     include/ui/NewProjectGitWizard.hpp
 
+    src/app/GitWorkflowController.cpp
+    include/app/GitWorkflowController.hpp
+
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp
     src/core/validation/metadata/ProjectMetadataValidators.cpp

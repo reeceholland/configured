@@ -26,6 +26,7 @@ class HomeScreenWidget;
 class EditorScreenWidget;
 class HelpScreenWidget;
 class QLabel;
+class GitWorkflowController;
 
 /**
  * @brief Main window of the Configured application.
@@ -216,54 +217,6 @@ class MainWindow : public QMainWindow {
    */
   void updateGitStatusBar();
 
-  /**
-   * @brief Prompt the user to pull the latest changes from the remote Git repository.
-   *
-   * Displays a confirmation dialog to pull the latest changes from the remote repository. If the
-   * user confirms, it performs a Git pull operation and updates the project and Git status
-   * accordingly. Displays error messages if the pull operation fails or if Git is not available.
-   */
-  void promptAndGitPull();
-
-  /**
-   * @brief Prompt the user to push commits to the remote Git repository.
-   *
-   * Displays a confirmation dialog to push commits to the remote repository. If the user confirms,
-   * it performs a Git push operation and updates the project and Git status accordingly. Displays
-   * error messages if the push operation fails, if there are no commits to push, or if Git is not
-   * available.
-   */
-  void promptAndGitPush();
-
- private slots:
-
-  /**
-   * @brief Handle the Git status action.
-   *
-   * This slot is called when the user triggers the Git status action. It retrieves
-   * and displays the current Git status for the project.
-   */
-  void onGitStatus();
-
-  /**
-   * @brief Handle the Git commit action.
-   *
-   * This slot is called when the user triggers the Git commit action. It commits
-   * the current changes to the Git repository.
-   */
-  void onGitCommit();
-
-  /**
-   * @brief Handle the Git connect remote action.
-   *
-   * This slot is called when the user triggers the Git connect remote action. It
-   * prompts the user to enter a remote URL and attempts to connect the local Git
-   * repository to the specified remote.
-   */
-  void onGitConnectRemote();
-
-  void onGitSwitchBranch();
-
  private:
   /// @brief The main stacked widget that holds the different screens (home, editor, help).
   QStackedWidget* stack_ = nullptr;
@@ -369,4 +322,6 @@ class MainWindow : public QMainWindow {
   bool hasUnsavedChanges_ = false;
 
   QToolButton* gitRefreshButton_ = nullptr;
+
+  std::unique_ptr<GitWorkflowController> gitWorkflowController_;
 };
