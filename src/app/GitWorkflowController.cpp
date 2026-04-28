@@ -1,9 +1,12 @@
 #include "app/GitWorkflowController.hpp"
 
+#include <QAbstractButton>
 #include <QDir>
 #include <QFileInfo>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QThread>
 
 #include "core/ConfiguredProject.hpp"
@@ -118,6 +121,41 @@ void GitWorkflowController::promptAndCommit() {
     return;
   }
 
+  if (!projectService_ || !context_.project) {
+    emit warningRequested("Git Commit", "Project service or project is not available.");
+    return;
+  }
+
+  if (context_.hasUnsavedChanges && *context_.hasUnsavedChanges) {
+    QMessageBox messageBox(dialogParent_);
+    messageBox.setIcon(QMessageBox::Question);
+    messageBox.setWindowTitle("Git Commit");
+    messageBox.setText("The project has unsaved editor changes.");
+    messageBox.setInformativeText("How would you like to continue?");
+
+    QPushButton* saveAndCommitButton =
+        messageBox.addButton("Save and Commit", QMessageBox::AcceptRole);
+    QPushButton* commitWithoutSavingButton =
+        messageBox.addButton("Commit Without Saving", QMessageBox::ActionRole);
+    messageBox.addButton(QMessageBox::Cancel);
+
+    messageBox.exec();
+
+    if (messageBox.clickedButton() == saveAndCommitButton) {
+      QString output;
+      if (!projectService_->saveProject(*context_.project, context_.projectFilePath, output)) {
+        emit warningRequested("Git Commit", "Project could not be saved.\n\n" + output);
+        return;
+      }
+
+      if (context_.hasUnsavedChanges) {
+        *context_.hasUnsavedChanges = false;
+      }
+    } else if (messageBox.clickedButton() != commitWithoutSavingButton) {
+      return;
+    }
+  }
+
   bool ok = false;
   const QString message =
       QInputDialog::getText(dialogParent_, "Git Commit", "Commit message:", QLineEdit::Normal,
@@ -127,17 +165,7 @@ void GitWorkflowController::promptAndCommit() {
     return;
   }
 
-  if (!projectService_ || !context_.project) {
-    emit warningRequested("Git Commit", "Project service or project is not available.");
-    return;
-  }
-
   QString output;
-  if (!projectService_->saveProject(*context_.project, context_.projectFilePath, output)) {
-    emit warningRequested("Git Commit", "Project could not be saved.\n\n" + output);
-    return;
-  }
-
   if (!gitService_->addAll(workingDir(), &output)) {
     emit warningRequested("Git Commit Failed", output);
     return;
@@ -152,10 +180,6 @@ void GitWorkflowController::promptAndCommit() {
   QString hashOutput;
   if (context_.project && gitService_->getCommitHash(workingDir(), &hash, &hashOutput)) {
     context_.project->setGitCommitHash(hash);
-  }
-
-  if (context_.hasUnsavedChanges) {
-    *context_.hasUnsavedChanges = false;
   }
 
   emit gitStateChanged();
@@ -395,8 +419,8 @@ void GitWorkflowController::promptAndConnectRemote() {
   }
 
   bool ok = false;
-  const QString remoteUrl = QInputDialog::getText(dialogParent_, "Connect Git Remote", "Remote URL:",
-                                                  QLineEdit::Normal, QString(), &ok);
+  const QString remoteUrl = QInputDialog::getText(dialogParent_, "Connect Git Remote",
+                                                  "Remote URL:", QLineEdit::Normal, QString(), &ok);
 
   if (!ok || remoteUrl.trimmed().isEmpty()) {
     return;
