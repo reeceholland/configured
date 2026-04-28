@@ -53,6 +53,8 @@ class ConfiguredProject {
 
   std::vector<ExportParameter> collectParameters() const;
 
+  void clearDirtyFlags();
+
  private:
   QString name_;
   QString description_;
@@ -70,4 +72,5 @@ class ConfiguredProject {
 
   void collectParametersRecursive(const ConfiguredItem* item, const QString& parentPath,
                                   std::vector<ExportParameter>& out) const;
+  void clearDirtyFlagsRecursive(ConfiguredItem* item);
 };

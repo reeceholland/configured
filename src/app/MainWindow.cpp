@@ -16,17 +16,19 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QInputDialog>
-#include <QLineEdit>
+#include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <QStatusBar>
 #include <QThread>
 #include <QToolBar>
 #include <QToolButton>
 
-#include "core/CloneWorker.hpp"
+#include "app/GitWorkflowController.hpp"
+#include "app/StatusBarController.hpp"
 #include "core/ConfiguredProject.hpp"
+#include "core/git/CloneWorker.hpp"
 #include "export/JsonProjectExporter.hpp"
 #include "export/XmlProjectExporter.hpp"
 #include "ui/ConnectingDialog.hpp"
@@ -40,6 +42,46 @@
 MainWindow::MainWindow() {
   setWindowTitle("CONFIGURED");
   resize(800, 400);
+
+  gitWorkflowController_ =
+      std::make_unique<GitWorkflowController>(&gitService_, &projectService_, this);
+
+  connect(gitWorkflowController_.get(), &GitWorkflowController::informationRequested, this,
+          [this](const QString& title, const QString& message) {
+            QMessageBox::information(this, title, message);
+          });
+
+  connect(gitWorkflowController_.get(), &GitWorkflowController::warningRequested, this,
+          [this](const QString& title, const QString& message) {
+            QMessageBox::warning(this, title, message);
+          });
+
+  connect(gitWorkflowController_.get(), &GitWorkflowController::gitStateChanged, this, [this]() {
+    updateWindowTitle();
+    updateGitUiVisibility();
+    updateGitStatusBar();
+  });
+
+  connect(gitWorkflowController_.get(), &GitWorkflowController::reloadProjectRequested, this,
+          [this](const QString& projectFilePath) {
+            QString error;
+            auto reloadedProject = projectService_.loadProject(projectFilePath, error);
+            if (!reloadedProject) {
+              QMessageBox::warning(this, "Reload Project Failed", error);
+              return;
+            }
+
+            currentProject_ = std::move(reloadedProject);
+            currentProjectFilePath_ = projectFilePath;
+            currentProject_->clearDirtyFlags();
+            hasUnsavedChanges_ = false;
+            editor_->setProject(currentProject_.get());
+            gitWorkflowController_->setProjectContext(
+                {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+            updateWindowTitle();
+            updateGitUiVisibility();
+            updateGitStatusBar();
+          });
 
   this->setStyleSheet(R"(
       QToolButton::menu-indicator {
@@ -71,10 +113,60 @@ MainWindow::MainWindow() {
   exportXmlAction_ = new QAction("Export to XML", this);
   exportJsonAction_ = new QAction("Export to JSON", this);
 
-  // gitInitAction_ = new QAction("Git Init", this);
   gitStatusAction_ = new QAction("Git Status", this);
   gitCommitAction_ = new QAction("Git Commit", this);
   gitConfigAction_ = new QAction("Git Identity", this);
+  gitConnectRemoteAction_ = new QAction("Connect Remote", this);
+  gitSwitchBranchAction_ = new QAction("Switch Branch", this);
+  gitPullAction_ = new QAction("Git Pull", this);
+  gitPushAction_ = new QAction("Git Push", this);
+
+  remoteUrlStatusLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(remoteUrlStatusLabel_);
+
+  gitBranchLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(gitBranchLabel_);
+
+  projectDirtyStatusLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(projectDirtyStatusLabel_);
+
+  unpushedCommitsLabel_ = new QLabel(this);
+  statusBar()->addPermanentWidget(unpushedCommitsLabel_);
+
+  gitRefreshButton_ = new QToolButton(this);
+  gitRefreshButton_->setText("Refresh");
+  gitRefreshButton_->setToolTip("Refresh Git status");
+  gitRefreshButton_->setAutoRaise(true);
+  gitRefreshButton_->setStyleSheet(R"(
+    QToolButton {
+      background-color: #e6e6e6;
+      border: 1px solid #b8b8b8;
+      border-radius: 3px;
+      padding: 1px 2px;
+      color: #222222;
+    }
+
+    QToolButton:hover {
+      background-color: #f2f2f2;
+    }
+
+    QToolButton:pressed {
+      background-color: #d6d6d6;
+    }
+  )");
+  statusBar()->addPermanentWidget(gitRefreshButton_);
+  gitRefreshButton_->setVisible(false);
+
+  statusBar()->setStyleSheet(R"(
+    QStatusBar::item {
+      border: none;
+    }
+  )");
+
+  statusBarController_ = std::make_unique<StatusBarController>(&gitService_, this);
+  statusBarController_->setWidgets({statusBar(), remoteUrlStatusLabel_, gitBranchLabel_,
+                                    projectDirtyStatusLabel_, unpushedCommitsLabel_,
+                                    gitRefreshButton_});
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
@@ -99,7 +191,11 @@ MainWindow::MainWindow() {
   toolbar_->addWidget(editButton);
 
   auto* gitMenu = new QMenu(this);
-  // gitMenu->addAction(gitInitAction_);
+  gitMenu->addAction(gitConnectRemoteAction_);
+  gitMenu->addAction(gitSwitchBranchAction_);
+  gitMenu->addAction(gitPullAction_);
+  gitMenu->addAction(gitPushAction_);
+  gitMenu->addSeparator();
   gitMenu->addAction(gitStatusAction_);
   gitMenu->addAction(gitCommitAction_);
   gitMenu->addAction(gitConfigAction_);
@@ -110,16 +206,6 @@ MainWindow::MainWindow() {
   gitButton_->setPopupMode(QToolButton::InstantPopup);
   gitButtonAction_ = toolbar_->addWidget(gitButton_);
 
-  auto* aboutMenu = new QMenu(this);
-  aboutMenu->addAction(versionAction_);
-  aboutMenu->addAction(helpAction_);
-
-  auto* aboutButton = new QToolButton(this);
-  aboutButton->setText("About");
-  aboutButton->setMenu(aboutMenu);
-  aboutButton->setPopupMode(QToolButton::InstantPopup);
-  toolbar_->addWidget(aboutButton);
-
   auto* exportMenu = new QMenu(this);
   exportMenu->addAction(exportXmlAction_);
   exportMenu->addAction(exportJsonAction_);
@@ -129,6 +215,16 @@ MainWindow::MainWindow() {
   exportButton->setMenu(exportMenu);
   exportButton->setPopupMode(QToolButton::InstantPopup);
   toolbar_->addWidget(exportButton);
+
+  auto* aboutMenu = new QMenu(this);
+  aboutMenu->addAction(versionAction_);
+  aboutMenu->addAction(helpAction_);
+
+  auto* aboutButton = new QToolButton(this);
+  aboutButton->setText("About");
+  aboutButton->setMenu(aboutMenu);
+  aboutButton->setPopupMode(QToolButton::InstantPopup);
+  toolbar_->addWidget(aboutButton);
 
   connect(helpAction_, &QAction::triggered, this, [this]() {
     showHelp();
@@ -177,7 +273,11 @@ MainWindow::MainWindow() {
     }
 
     QMessageBox::information(this, "Save Successful", "Project saved successfully.");
+    currentProject_->clearDirtyFlags();
+    editor_->refreshTree();
+    hasUnsavedChanges_ = false;
     updateWindowTitle();
+    updateGitStatusBar();
   });
 
   connect(addChildAction_, &QAction::triggered, this, [this]() {
@@ -200,6 +300,18 @@ MainWindow::MainWindow() {
   });
 
   connect(projectMetadataAction_, &QAction::triggered, this, &MainWindow::editProjectMetadata);
+
+  connect(gitPullAction_, &QAction::triggered, this, [this]() {
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+    gitWorkflowController_->promptAndPull();
+  });
+
+  connect(gitPushAction_, &QAction::triggered, this, [this]() {
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+    gitWorkflowController_->promptAndPush();
+  });
 
   connect(home_, &HomeScreenWidget::openProjectRequested, this, [this]() {
     const QString filePath = QFileDialog::getOpenFileName(
@@ -224,6 +336,10 @@ MainWindow::MainWindow() {
 
     editor_->setProject(currentProject_.get());
 
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+
+    updateGitStatusBar();
     updateWindowTitle();
     updateGitUiVisibility();
     showEditor();
@@ -233,9 +349,28 @@ MainWindow::MainWindow() {
     promptAndCreateProject();
   });
 
-  connect(gitStatusAction_, &QAction::triggered, this, &MainWindow::onGitStatus);
+  connect(gitConnectRemoteAction_, &QAction::triggered, this, [this]() {
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+    gitWorkflowController_->promptAndConnectRemote();
+  });
+  connect(gitSwitchBranchAction_, &QAction::triggered, this, [this]() {
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+    gitWorkflowController_->promptAndSwitchBranch();
+  });
 
-  connect(gitCommitAction_, &QAction::triggered, this, &MainWindow::onGitCommit);
+  connect(gitStatusAction_, &QAction::triggered, this, [this]() {
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+    gitWorkflowController_->showGitStatus();
+  });
+
+  connect(gitCommitAction_, &QAction::triggered, this, [this]() {
+    gitWorkflowController_->setProjectContext(
+        {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+    gitWorkflowController_->promptAndCommit();
+  });
 
   connect(exportXmlAction_, &QAction::triggered, this, &MainWindow::exportParametersToXml);
 
@@ -247,6 +382,20 @@ MainWindow::MainWindow() {
 
   connect(home_, &HomeScreenWidget::connectRemoteRequested, this, [this]() {
     promptAndCloneRemoteProject();
+  });
+
+  connect(editor_, &EditorScreenWidget::projectModified, this, [this](ConfiguredItem* item) {
+    hasUnsavedChanges_ = true;
+
+    if (item) {
+      statusBar()->showMessage("Unsaved changes", 2000);
+    }
+
+    updateWindowTitle();
+  });
+
+  connect(gitRefreshButton_, &QToolButton::clicked, this, [this]() {
+    updateGitStatusBar();
   });
 
   showHome();
@@ -265,7 +414,9 @@ void MainWindow::showHome() {
   if (gitButtonAction_) {
     gitButtonAction_->setVisible(false);
   }
+
   setEditorActionsEnabled(false);
+  updateGitStatusBar();
 }
 
 void MainWindow::showEditor() {
@@ -277,6 +428,7 @@ void MainWindow::showEditor() {
 
   setEditorActionsEnabled(true);
   updateGitUiVisibility();
+  updateGitStatusBar();
 }
 
 void MainWindow::setEditorActionsEnabled(bool enabled) {
@@ -319,18 +471,39 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
   if (exportJsonAction_) {
     exportJsonAction_->setEnabled(enabled);
   }
+
+  if (gitConnectRemoteAction_) {
+    gitConnectRemoteAction_->setEnabled(enabled);
+  }
+
+  if (gitPullAction_) {
+    gitPullAction_->setEnabled(enabled);
+  }
+
+  if (gitSwitchBranchAction_) {
+    gitSwitchBranchAction_->setEnabled(enabled);
+  }
+
+  if (gitRefreshButton_) {
+    gitRefreshButton_->setEnabled(enabled);
+  }
 }
 
 void MainWindow::updateWindowTitle() {
+  QString title = "CONFIGURED";
+
   if (currentProject_) {
     const QString name = currentProject_->name().trimmed();
     if (!name.isEmpty()) {
-      setWindowTitle("CONFIGURED - " + name);
-      return;
+      title += " - " + name;
     }
   }
 
-  setWindowTitle("CONFIGURED");
+  if (hasUnsavedChanges_) {
+    title += " *";
+  }
+
+  setWindowTitle(title);
 }
 
 void MainWindow::promptAndCreateProject() {
@@ -374,11 +547,19 @@ void MainWindow::promptAndCreateProject() {
 
   editor_->setProject(currentProject_.get());
 
+  gitWorkflowController_->setProjectContext(
+      {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
+
+  updateGitStatusBar();
   updateWindowTitle();
   updateGitUiVisibility();
   showEditor();
-}
 
+  if (!currentProject_ || !currentProject_->isGitManaged()) {
+    return;
+  }
+  gitWorkflowController_->runNewProjectGitOnboarding();
+}
 void MainWindow::updateGitUiVisibility() {
   if (!gitButton_) {
     return;
@@ -440,87 +621,6 @@ void MainWindow::exportParametersToJson() {
   }
 
   QMessageBox::information(this, "Export", "Parameters exported successfully.");
-}
-
-void MainWindow::onGitStatus() {
-  const QString workingDir = currentProjectWorkingDirectory();
-
-  if (workingDir.isEmpty()) {
-    QMessageBox::information(this, "Git", "Save the project first before checking status.");
-    return;
-  }
-
-  QString output;
-
-  if (!gitService_.status(workingDir, &output)) {
-    QMessageBox::warning(this, "Git Status Failed", output);
-    return;
-  }
-
-  if (output.trimmed().isEmpty()) {
-    output = "Working tree clean.";
-  }
-
-  QMessageBox::information(this, "Git Status", output);
-}
-
-void MainWindow::onGitCommit() {
-  const QString workingDir = currentProjectWorkingDirectory();
-
-  if (workingDir.isEmpty()) {
-    QMessageBox::information(this, "Git", "Save the project first before committing.");
-    return;
-  }
-
-  QString output;
-
-  if (!gitService_.isRepository(workingDir, &output)) {
-    QMessageBox::warning(this, "Git Commit", "This folder is not a Git repository.");
-    return;
-  }
-
-  bool ok = false;
-  const QString message = QInputDialog::getText(
-      this, "Git Commit", "Commit message:", QLineEdit::Normal, "Update configured project", &ok);
-
-  if (!ok || message.trimmed().isEmpty()) {
-    return;
-  }
-
-  // Save first so the Git commit includes the latest editor state.
-  if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, output)) {
-    QMessageBox::warning(this, "Git Commit", "Project could not be saved.");
-    return;
-  }
-
-  if (!gitService_.addAll(workingDir, &output)) {
-    QMessageBox::warning(this, "Git Commit Failed", output);
-    return;
-  }
-
-  if (!gitService_.commit(workingDir, message.trimmed(), &output)) {
-    QMessageBox::warning(this, "Git Commit Failed", output);
-    return;
-  }
-
-  if (currentProject_) {
-    QString hash;
-    QString hashOutput;
-    if (gitService_.getCommitHash(workingDir, &hash, &hashOutput)) {
-      currentProject_->setGitCommitHash(hash);
-
-      // Persist the new commit hash back into the .configured file.
-      QString saveError;
-      if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, saveError)) {
-        QMessageBox::warning(
-            this, "Git Commit",
-            "Commit created, but project file could not be updated:\n" + saveError);
-        return;
-      }
-    }
-  }
-
-  QMessageBox::information(this, "Git Commit", output.isEmpty() ? "Commit created." : output);
 }
 
 void MainWindow::exportParametersToXml() {
@@ -629,6 +729,7 @@ void MainWindow::editProjectMetadata() {
 
   updateWindowTitle();
   updateGitUiVisibility();
+  updateGitStatusBar();
 }
 
 void MainWindow::promptAndCloneRemoteProject() {
@@ -692,6 +793,8 @@ void MainWindow::promptAndCloneRemoteProject() {
             currentProjectFilePath_ = projectFilePath;
 
             editor_->setProject(currentProject_.get());
+            gitWorkflowController_->setProjectContext(
+                {currentProject_.get(), currentProjectFilePath_, &hasUnsavedChanges_});
 
             updateWindowTitle();
             updateGitUiVisibility();
@@ -713,4 +816,16 @@ QString MainWindow::findConfiguredFile(const QString& folderPath) const {
   }
 
   return {};
+}
+
+void MainWindow::updateGitStatusBar() {
+  if (!statusBarController_) {
+    return;
+  }
+
+  statusBarController_->setContext({currentProject_.get(), currentProjectFilePath_,
+                                    hasUnsavedChanges_,
+                                    stack_ && stack_->currentWidget() == editor_});
+
+  statusBarController_->refresh();
 }

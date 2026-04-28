@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.21)
-project(Configured LANGUAGES CXX VERSION 0.3.0)
+project(Configured LANGUAGES CXX VERSION 0.4.0)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
@@ -14,6 +14,9 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
 
 add_executable(Configured
     src/main.cpp
+
+    src/app/AppLogger.cpp
+    include/app/AppLogger.hpp
 
     src/app/MainWindow.cpp
     include/app/MainWindow.hpp
@@ -33,8 +36,8 @@ add_executable(Configured
     src/ui/ProjectMetadataDialog.cpp
     include/ui/ProjectMetadataDialog.hpp
 
-    src/core/GitService.cpp
-    include/core/GitService.hpp
+    src/core/git/GitService.cpp
+    include/core/git/GitService.hpp
 
     src/ui/GitConfigDialog.cpp
     include/ui/GitConfigDialog.hpp
@@ -60,8 +63,32 @@ add_executable(Configured
     src/ui/ConnectingDialog.cpp
     include/ui/ConnectingDialog.hpp
 
-    src/core/CloneWorker.cpp
-    include/core/CloneWorker.hpp
+    src/core/git/CloneWorker.cpp
+    include/core/git/CloneWorker.hpp
+
+    src/core/git/GitPullWorker.cpp
+    include/core/git/GitPullWorker.hpp
+
+    src/ui/PullingDialog.cpp
+    include/ui/PullingDialog.hpp
+
+    src/core/git/GitPushWorker.cpp
+    include/core/git/GitPushWorker.hpp
+
+    src/ui/PushingDialog.cpp
+    include/ui/PushingDialog.hpp
+
+    src/ui/PullPreflightDialog.cpp
+    include/ui/PullPreflightDialog.hpp
+
+    src/ui/NewProjectGitWizard.cpp
+    include/ui/NewProjectGitWizard.hpp
+
+    src/app/GitWorkflowController.cpp
+    include/app/GitWorkflowController.hpp
+
+    src/app/StatusBarController.cpp
+    include/app/StatusBarController.hpp
 
     src/core/validation/ValidationResult.cpp
     src/core/validation/metadata/ProjectMetadataValidator.cpp

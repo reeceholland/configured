@@ -163,7 +163,6 @@ bool ConfiguredProject::saveToFile(const QString& filePath, QString* error) {
   rootObj["lastModified"] = last_modified_;
   rootObj["robotPlatform"] = robot_platform_;
   rootObj["gitManaged"] = git_managed_;
-  rootObj["gitCommitHash"] = gitCommitHash_;
   rootObj["root"] = itemToJson(root_.get());
 
   QJsonDocument doc(rootObj);
@@ -177,6 +176,7 @@ bool ConfiguredProject::saveToFile(const QString& filePath, QString* error) {
   }
 
   file.write(doc.toJson(QJsonDocument::Indented));
+
   return true;
 }
 
@@ -335,5 +335,23 @@ void ConfiguredProject::collectParametersRecursive(const ConfiguredItem* item,
 
   for (const auto& child : item->children()) {
     collectParametersRecursive(child.get(), currentPath, out);
+  }
+}
+
+void ConfiguredProject::clearDirtyFlags() {
+  if (root_) {
+    clearDirtyFlagsRecursive(root_.get());
+  }
+}
+
+void ConfiguredProject::clearDirtyFlagsRecursive(ConfiguredItem* item) {
+  if (!item) {
+    return;
+  }
+
+  item->setIsDirty(false);
+
+  for (const auto& child : item->children()) {
+    clearDirtyFlagsRecursive(child.get());
   }
 }

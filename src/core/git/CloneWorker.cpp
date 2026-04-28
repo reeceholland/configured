@@ -1,4 +1,4 @@
-#include "core/CloneWorker.hpp"
+#include "core/git/CloneWorker.hpp"
 
 #include <QDir>
 #include <QProcess>

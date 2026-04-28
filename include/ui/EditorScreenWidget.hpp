@@ -35,6 +35,11 @@ class EditorScreenWidget : public QWidget {
 
   void updateParameterValidationUi();
 
+  void refreshTree();
+
+ signals:
+  void projectModified(ConfiguredItem* item);
+
  private:
   QTreeWidget* tree_ = nullptr;
 

@@ -2,109 +2,166 @@
 
 **Robotics Configuration Studio**
 
-CONFIGURED is a desktop application built with C++ and Qt for designing, validating, and managing structured robotics configuration data.
+CONFIGURED is a C++17 and Qt 6 desktop application for creating, validating, saving, exporting, and version-managing structured robotics configuration projects.
 
-It provides a model-driven interface for constructing hierarchical system configurations, enabling consistency, traceability, and maintainability across complex robotic platforms.
+The app provides a guided UI for building hierarchical configuration data without manually editing JSON, YAML, or XML files.
 
 ---
 
 ## Status
 
-- Actively developed
-- Stable core editing workflow
-- Production-oriented architecture under continuous refinement
+CONFIGURED is under active development.
+
+Current focus areas:
+
+- project save/load workflow
+- validation
+- Git-backed project workflows
+- remote clone/pull support
+- maintainable C++/Qt architecture
 
 ---
 
-## Overview
+## Features
 
-CONFIGURED addresses the limitations of manually editing configuration files (e.g. JSON/YAML) by introducing a structured tooling layer for:
+### Structured Project Editing
 
-- Deterministic configuration authoring
-- Real-time validation
-- Metadata management
-- Controlled editing workflows
+CONFIGURED models a project as a hierarchy:
 
-The application is designed for robotics and autonomous systems where configuration correctness is critical.
+```text
+System
+  Subsystem
+    Component
+      Parameter
+```
 
----
+Each configuration item can store:
 
-## Key Features
+- name
+- type
+- description
+- child items
 
-### Hierarchical Configuration Model
-- System → Subsystem → Component → Parameter structure
-- Tree-based representation for scalable system design
-- Explicit parent-child relationships
+Parameter items can also store:
 
-### Parameter Editing
-- Key/value configuration model
-- Support for units and required constraints
-- Designed for future type safety extensions
-
-### Validation
-- Detection of duplicate parameter keys
-- Enforcement of required parameters
-- Foundation for rule-based validation framework
+- key
+- value
+- unit
+- required flag
 
 ### Project Persistence
-- Save and load `.configured` project files
-- Structured storage of configuration and metadata
-- Designed for future database-backed storage
+
+Projects are saved as `.configured` files.
+
+A project folder typically looks like:
+
+```text
+MyProject/
+  MyProject.configured
+  .git/
+```
+
+The `.configured` file stores project metadata and configuration data in structured JSON.
+
+### Validation
+
+The app validates project data before saving.
+
+Current validation includes:
+
+- duplicate parameter key detection
+- required parameter key checks
+- required parameter value checks
+- invalid item name checks
+- whole-project validation before save
 
 ### Metadata Management
-- Project metadata includes:
-  - Name, description, author, company
-  - Version and target platform
-- Automatic last modified timestamp tracking
 
-### User Interface
-- Built with Qt (Widgets)
-- Model-driven UI reflecting underlying data
-- Structured and constrained editing workflow
+Project metadata includes:
 
----
+- project name
+- description
+- author
+- company
+- version
+- robot platform
+- Git-managed flag
+- last modified timestamp
 
-## Why CONFIGURED
+### Export
 
-Manual configuration editing introduces risk:
+Project parameters can be exported to:
 
-- No validation guarantees
-- Prone to duplication and inconsistency
-- Poor scalability for large systems
+- JSON
+- XML
 
-CONFIGURED provides:
+### Git Integration
 
-- Structured editing with constraints
-- Centralised configuration management
-- A foundation for integration with runtime systems (e.g. ROS 2)
+CONFIGURED includes project-focused Git workflows:
+
+- initialize Git-managed projects
+- show Git status
+- commit project changes
+- connect a remote repository
+- clone a remote project from the home screen
+- pull remote changes
+- show current branch
+- show remote URL
+
+Long-running Git operations such as clone and pull run through worker objects so the UI remains responsive.
 
 ---
 
 ## Architecture
 
-CONFIGURED follows a layered architecture with clear separation of concerns:
+CONFIGURED uses a layered structure with clear ownership boundaries.
 
 ```text
-UI Layer (Qt Widgets)
-    ↓
-MainWindow (Application Controller)
-    ↓
-EditorScreenWidget (Interaction Layer)
-    ↓
-ConfiguredProject (Project Model)
-    ↓
-ConfiguredItem (Hierarchical Data Structure)
+MainWindow
+  owns the active project session
+  owns the current project file path
+  coordinates user workflows
+
+EditorScreenWidget
+  displays and edits the active project
+  borrows the project pointer
+  does not save/load projects
+
+ProjectService
+  creates, loads, saves, and validates projects
+
+ConfiguredProject
+  owns project metadata and the root configuration item
+  serializes/deserializes project files
+
+ConfiguredItem
+  represents one node in the configuration hierarchy
+
+GitService
+  wraps low-level Git commands
+
+CloneWorker / GitPullWorker
+  run long Git operations outside the GUI thread
 ```
 
-### Core Components
+---
 
-| Component | Responsibility |
-|-----------|----------------|
-| ConfiguredProject | Project state and metadata management |
-| ConfiguredItem | Hierarchical configuration node representation |
-| EditorScreenWidget | Primary editing interface |
-| HomeScreenWidget | Entry point and navigation |
-| ProjectMetadataDialog | Metadata editing interface |
+## Core Components
+
+| Component             | Responsibility                                                           |
+| --------------------- | ------------------------------------------------------------------------ |
+| `MainWindow`          | Main application controller, screen switching, project session ownership |
+| `HomeScreenWidget`    | Entry screen for creating, opening, and connecting projects              |
+| `EditorScreenWidget`  | Tree editor and item property editing                                    |
+| `ConfiguredProject`   | Project model, metadata, JSON persistence                                |
+| `ConfiguredItem`      | Hierarchical configuration item model                                    |
+| `ProjectService`      | Project create/load/save/update workflows                                |
+| `ProjectValidator`    | Whole-project validation before save                                     |
+| `GitService`          | Low-level Git command wrapper                                            |
+| `CloneWorker`         | Asynchronous remote clone worker                                         |
+| `GitPullWorker`       | Asynchronous pull worker                                                 |
+| `JsonProjectExporter` | JSON parameter export                                                    |
+| `XmlProjectExporter`  | XML parameter export                                                     |
 
 ---
 
@@ -112,49 +169,191 @@ ConfiguredItem (Hierarchical Data Structure)
 
 ```text
 configured/
-├── include/
-│   ├── app/
-│   ├── core/
-│   └── ui/
-├── src/
-│   ├── app/
-│   ├── core/
-│   └── ui/
-├── resources/
-│   └── images/
-├── CMakeLists.txt
-└── README.md
+  include/
+    app/
+    core/
+      validation/
+    export/
+    ui/
+  src/
+    app/
+    core/
+      validation/
+    export/
+    ui/
+  tests/
+  resources/
+  docs/
+  CMakeLists.txt
+  CMakePresets.json
+  README.md
 ```
 
 ---
 
-## Example Configuration
+## Requirements
+
+- C++17 compiler
+- CMake 3.21 or newer
+- Ninja
+- Qt 6 with:
+  - Core
+  - Gui
+  - Widgets
+- Git
+- Doxygen, optional, for documentation generation
+
+On Windows, the current presets expect Qt at:
+
+```text
+C:/Qt/6.10.1/msvc2022_64
+```
+
+---
+
+## Configure And Build
+
+From the repository root:
+
+```powershell
+cmake --preset x64-debug
+cmake --build out/build/x64-debug
+```
+
+Release build:
+
+```powershell
+cmake --preset x64-release
+cmake --build out/build/x64-release
+```
+
+---
+
+## Run
+
+Debug build:
+
+```powershell
+out/build/x64-debug/Configured.exe
+```
+
+Release build:
+
+```powershell
+out/build/x64-release/Configured.exe
+```
+
+---
+
+## Run Tests
+
+Build first:
+
+```powershell
+cmake --build out/build/x64-debug
+```
+
+Run all tests:
+
+```powershell
+ctest --test-dir out/build/x64-debug --output-on-failure
+```
+
+Run a specific test:
+
+```powershell
+ctest --test-dir out/build/x64-debug --output-on-failure -R ProjectServiceTest
+```
+
+Current test areas include:
+
+- configured item behavior
+- project save/load round trips
+- project service load/save workflow
+- project-wide validation
+- duplicate parameter key detection
+
+---
+
+## Generate Documentation
+
+If Doxygen is installed:
+
+```powershell
+cmake --build out/build/x64-debug --target doc
+```
+
+Generated documentation is written under the build directory:
+
+```text
+out/build/x64-debug/docs
+```
+
+---
+
+## Git Workflows
+
+### Local Git-Managed Project
+
+A project can be created as Git-managed. The project folder becomes the Git working directory.
+
+```text
+ProjectFolder/
+  ProjectName.configured
+  .git/
+```
+
+### Connect Remote
+
+For an open Git-managed project, the Git menu can connect the local repository to a remote URL.
+
+### Clone Remote Project
+
+The home screen can clone a remote repository locally. After clone completes, CONFIGURED searches for a `.configured` file and opens it in the editor.
+
+Clone runs in a worker thread so the UI does not freeze.
+
+### Pull Remote Changes
+
+Git pull is treated as a long-running operation and should run outside the GUI thread.
+
+---
+
+## Configuration File Example
 
 ```json
 {
   "projectName": "My Rover",
-  "version": "0.1.0",
+  "description": "Example robotics configuration",
+  "author": "Reece Holland",
+  "company": "Example Co",
+  "version": "0.4.0",
+  "lastModified": "2026-04-21T10:15:00",
   "robotPlatform": "Rugged Rover",
-  "lastModified": "2026-04-11 10:15:00",
+  "gitManaged": true,
   "root": {
     "name": "System",
     "type": "System",
+    "description": "Top-level system configuration.",
     "children": [
       {
         "name": "Drivetrain",
         "type": "Subsystem",
+        "description": "",
         "children": [
           {
-            "name": "Left Motor",
+            "name": "LeftMotor",
             "type": "Component",
+            "description": "",
             "children": [
               {
-                "name": "Max RPM",
+                "name": "MaxRPM",
                 "type": "Parameter",
                 "parameterKey": "max_rpm",
                 "parameterValue": "150",
                 "parameterUnit": "rpm",
-                "required": true
+                "required": true,
+                "children": []
               }
             ]
           }
@@ -167,80 +366,87 @@ configured/
 
 ---
 
-## Build Instructions
+## Development Notes
 
-### Prerequisites
+### Ownership Model
 
-- CMake ≥ 3.21
-- Qt 6 (Core, Widgets, GUI)
-- Ninja or Visual Studio
+`MainWindow` owns the active project:
 
-### Build
-
-```bash
-cmake --preset x64-debug
-cmake --build out/build/x64-debug
+```cpp
+std::unique_ptr<ConfiguredProject> currentProject_;
+QString currentProjectFilePath_;
 ```
 
-### Run
+`EditorScreenWidget` receives a non-owning pointer:
 
-```bash
-out/build/x64-debug/Configured.exe
+```cpp
+editor_->setProject(currentProject_.get());
 ```
 
----
+This keeps persistence and session ownership out of the editor widget.
 
-## Design Principles
+### Save Workflow
 
-- Model-driven architecture with a single source of truth
-- Strong separation between UI and data model
-- Deterministic configuration editing
-- Extensible for future robotics workflows
+The save path is:
+
+```text
+MainWindow
+  ProjectService::saveProject
+    ProjectValidator::validate
+    ConfiguredProject::saveToFile
+```
+
+### Long-Running Git Commands
+
+Long-running Git operations should not block the Qt GUI thread. Use a worker object and `QThread` for commands such as:
+
+- clone
+- pull
+- push, if network latency becomes noticeable
 
 ---
 
 ## Roadmap
 
-### Implemented
-- Hierarchical configuration system
-- Parameter editing and validation (duplicate keys)
-- Project metadata management
-- Structured project persistence
+Planned or likely future work:
 
-### Planned
-- Advanced validation framework (error panel and highlighting)
+- dirty-state tracking for unsaved changes
+- Save As workflow
+- improved Git pull/push UX
+- clearer merge conflict handling
+- branch/upstream status display
+- remote URL management
+- async push support
+- stronger typed parameter values
+- undo/redo
 - ROS 2 YAML export
-- Git integration and version tracking
-- Undo/redo system
-- Plugin-based configuration extensions
-
----
-
-## Future Direction
-
-CONFIGURED is designed to evolve into a full configuration pipeline tool, supporting:
-
-- Export to ROS 2 parameter and launch systems
-- Integration with version control workflows
-- Validation against runtime schemas
-- Plugin-based domain extensions
+- richer validation summaries
+- plugin-based configuration extensions
 
 ---
 
 ## Contributing
 
-Contributions, ideas, and feedback are welcome.  
-The project is under active development and open to iteration.
+Contributions, ideas, and feedback are welcome.
+
+Recommended development loop:
+
+```powershell
+cmake --build out/build/x64-debug
+ctest --test-dir out/build/x64-debug --output-on-failure
+```
+
+Please keep changes focused and add tests for project service, validation, persistence, or Git workflow behavior where practical.
 
 ---
 
 ## License
 
-To be defined
+To be defined.
 
 ---
 
 ## Author
 
 Reece Holland  
-Software Engineer – Robotics and Autonomous Systems
+Software Engineer - Robotics and Autonomous Systems

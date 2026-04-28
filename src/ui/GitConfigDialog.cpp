@@ -10,7 +10,7 @@
 #include <QRadioButton>
 #include <QVBoxLayout>
 
-#include "core/GitService.hpp"
+#include "core/git/GitService.hpp"
 
 GitConfigDialog::GitConfigDialog(GitService *gitService,
                                  const QString &workingDir,
