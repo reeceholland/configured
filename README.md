@@ -2,29 +2,68 @@
 
 **Robotics Configuration Studio**
 
-CONFIGURED is a C++17 and Qt 6 desktop application for creating, validating, saving, exporting, and version-managing structured robotics configuration projects.
+CONFIGURED is a C++17 and Qt 6 desktop application for creating, editing,
+validating, exporting, and Git-managing structured robotics configuration
+projects.
 
-The app provides a guided UI for building hierarchical configuration data without manually editing JSON, YAML, or XML files.
+The application is built for robotics and autonomous systems projects where
+configuration data needs to be readable, versioned, and exported without
+manually editing JSON, XML, or ad hoc parameter files.
 
 ---
 
-## Status
+## Screenshots
 
-CONFIGURED is under active development.
+### Home Screen
 
-Current focus areas:
+The home screen provides entry points for creating a project, opening an
+existing `.configured` file, cloning a remote project, and opening help.
 
-- project save/load workflow
-- validation
+![CONFIGURED home screen](docs/screenshots/configured_home_screen.png)
+
+### Project Metadata
+
+New and existing projects use a metadata dialog for project identity, version,
+platform, Git-managed state, last modified timestamp, and commit metadata.
+
+![CONFIGURED project metadata dialog](docs/screenshots/configured_new_project.png)
+
+### Project Editor
+
+The editor shows the configuration hierarchy on the left and editable item
+properties on the right.
+
+![CONFIGURED sample project editor](docs/screenshots/configured_sample_project.png)
+
+### Parameter Editing
+
+Parameter nodes expose key, value, unit, and required fields. Validation is
+shown inline while editing.
+
+![CONFIGURED sample parameter editor](docs/screenshots/configured_sample_param.png)
+
+---
+
+## Current Status
+
+CONFIGURED is under active development. The current application version in
+`CMakeLists.txt` is `0.5.0`.
+
+Current focus areas include:
+
+- structured project editing
+- project save/load workflows
+- inline and whole-project validation
 - Git-backed project workflows
-- remote clone/pull support
+- remote clone, pull, push, and branch workflows
+- JSON and XML parameter export
 - maintainable C++/Qt architecture
 
 ---
 
-## Features
+## Functionality
 
-### Structured Project Editing
+### Project Model
 
 CONFIGURED models a project as a hierarchy:
 
@@ -35,47 +74,37 @@ System
       Parameter
 ```
 
-Each configuration item can store:
+Each configuration item stores:
 
 - name
 - type
 - description
 - child items
+- dirty/error visual state
 
-Parameter items can also store:
+Parameter items also store:
 
-- key
-- value
+- parameter key
+- parameter value
 - unit
 - required flag
 
-### Project Persistence
+New projects are initialized with a sample robotics configuration tree so the
+editor opens with a useful starting structure.
 
-Projects are saved as `.configured` files.
+### Home Workflow
 
-A project folder typically looks like:
+From the home screen users can:
 
-```text
-MyProject/
-  MyProject.configured
-  .git/
-```
+- create a new project
+- open an existing `.configured` project file
+- connect to a remote Git repository by cloning it locally
+- open the built-in help screen
 
-The `.configured` file stores project metadata and configuration data in structured JSON.
+Remote clone runs on a worker thread and, after cloning, CONFIGURED searches the
+repository root for a single `.configured` file to open.
 
-### Validation
-
-The app validates project data before saving.
-
-Current validation includes:
-
-- duplicate parameter key detection
-- required parameter key checks
-- required parameter value checks
-- invalid item name checks
-- whole-project validation before save
-
-### Metadata Management
+### Project Metadata
 
 Project metadata includes:
 
@@ -87,6 +116,61 @@ Project metadata includes:
 - robot platform
 - Git-managed flag
 - last modified timestamp
+- Git commit hash
+
+Metadata can be edited from the Project menu. Enabling Git management for a
+project initializes a Git repository in the project folder when needed.
+
+### Editor
+
+The editor provides:
+
+- a tree view of the configuration hierarchy
+- a properties panel for the selected item
+- item type selection for System, Subsystem, Component, and Parameter
+- child creation based on the selected item's role
+- selected item removal
+- dirty state tracking for unsaved edits
+- inline field validation and visual error highlighting
+
+Default child creation follows the model hierarchy:
+
+```text
+System -> Subsystem
+Subsystem -> Component
+Component -> Parameter
+Parameter -> Parameter
+```
+
+### Persistence
+
+Projects are saved as `.configured` files. A Git-managed project typically looks
+like:
+
+```text
+MyProject/
+  MyProject.configured
+  .git/
+```
+
+The `.configured` file stores metadata and the configuration tree as structured
+JSON.
+
+### Validation
+
+Validation happens both while editing and before saving.
+
+Current validation covers:
+
+- required project name
+- invalid item names
+- duplicate parameter keys
+- missing required parameter keys
+- missing required parameter values
+- whole-project validation before save
+
+Invalid fields are highlighted in the editor or metadata dialog. Tree items also
+show error state when a selected item fails validation.
 
 ### Export
 
@@ -95,20 +179,38 @@ Project parameters can be exported to:
 - JSON
 - XML
 
+Exports include project metadata and the collected parameter list. For
+Git-managed projects, exports include the current commit hash when available.
+For non-Git-managed projects, exports include the project version.
+
 ### Git Integration
 
-CONFIGURED includes project-focused Git workflows:
+Git support is available for Git-managed projects.
 
-- initialize Git-managed projects
-- show Git status
-- commit project changes
-- connect a remote repository
+Supported workflows include:
+
+- initialize a repository for a new Git-managed project
+- configure Git identity locally or globally
+- create an initial commit during new-project onboarding
+- connect or update an `origin` remote
 - clone a remote project from the home screen
-- pull remote changes
-- show current branch
-- show remote URL
+- show Git status
+- save-and-commit or commit without saving
+- switch local branches
+- switch to remote-only branches
+- pull remote changes with a preflight dialog
+- push changes, including first push when no upstream exists
+- refresh visible Git status
 
-Long-running Git operations such as clone and pull run through worker objects so the UI remains responsive.
+The editor status bar shows:
+
+- remote URL
+- current branch
+- clean or dirty working tree state
+- first-push or unpushed-commit state
+
+Clone, pull, and push use worker objects so long-running Git operations do not
+block the Qt UI.
 
 ---
 
@@ -120,27 +222,33 @@ CONFIGURED uses a layered structure with clear ownership boundaries.
 MainWindow
   owns the active project session
   owns the current project file path
-  coordinates user workflows
+  coordinates screen switching and user workflows
 
 EditorScreenWidget
   displays and edits the active project
   borrows the project pointer
-  does not save/load projects
+  does not save or load projects
 
 ProjectService
-  creates, loads, saves, and validates projects
+  creates, loads, saves, validates, and updates project metadata
 
 ConfiguredProject
   owns project metadata and the root configuration item
-  serializes/deserializes project files
+  serializes and deserializes project files
 
 ConfiguredItem
   represents one node in the configuration hierarchy
 
+GitWorkflowController
+  coordinates user-facing Git workflows
+
 GitService
   wraps low-level Git commands
 
-CloneWorker / GitPullWorker
+StatusBarController
+  refreshes Git status labels in the editor status bar
+
+CloneWorker / GitPullWorker / GitPushWorker
   run long Git operations outside the GUI thread
 ```
 
@@ -148,20 +256,26 @@ CloneWorker / GitPullWorker
 
 ## Core Components
 
-| Component             | Responsibility                                                           |
-| --------------------- | ------------------------------------------------------------------------ |
-| `MainWindow`          | Main application controller, screen switching, project session ownership |
-| `HomeScreenWidget`    | Entry screen for creating, opening, and connecting projects              |
-| `EditorScreenWidget`  | Tree editor and item property editing                                    |
-| `ConfiguredProject`   | Project model, metadata, JSON persistence                                |
-| `ConfiguredItem`      | Hierarchical configuration item model                                    |
-| `ProjectService`      | Project create/load/save/update workflows                                |
-| `ProjectValidator`    | Whole-project validation before save                                     |
-| `GitService`          | Low-level Git command wrapper                                            |
-| `CloneWorker`         | Asynchronous remote clone worker                                         |
-| `GitPullWorker`       | Asynchronous pull worker                                                 |
-| `JsonProjectExporter` | JSON parameter export                                                    |
-| `XmlProjectExporter`  | XML parameter export                                                     |
+| Component | Responsibility |
+| --- | --- |
+| `MainWindow` | Main application controller, screen switching, project session ownership |
+| `HomeScreenWidget` | Entry screen for creating, opening, cloning, and help |
+| `EditorScreenWidget` | Tree editor, property editing, dirty state, inline validation |
+| `ProjectMetadataDialog` | Project metadata editing and validation |
+| `ConfiguredProject` | Project model, metadata, parameter collection, JSON persistence |
+| `ConfiguredItem` | Hierarchical configuration item model |
+| `ProjectService` | Project create/load/save/update workflows |
+| `ProjectValidator` | Whole-project validation before save |
+| `ItemValidator` | Per-item and parameter validation |
+| `ProjectMetadataValidator` | Project metadata validation |
+| `GitWorkflowController` | Commit, branch, pull, push, remote, and onboarding workflows |
+| `StatusBarController` | Git status bar visibility and status refresh |
+| `GitService` | Low-level Git command wrapper |
+| `CloneWorker` | Asynchronous remote clone worker |
+| `GitPullWorker` | Asynchronous pull worker |
+| `GitPushWorker` | Asynchronous push worker |
+| `JsonProjectExporter` | JSON parameter export |
+| `XmlProjectExporter` | XML parameter export |
 
 ---
 
@@ -172,18 +286,24 @@ configured/
   include/
     app/
     core/
+      git/
       validation/
     export/
     ui/
   src/
     app/
     core/
+      git/
       validation/
     export/
     ui/
   tests/
   resources/
+    help/
+    images/
   docs/
+    screenshots/
+  installer/
   CMakeLists.txt
   CMakePresets.json
   README.md
@@ -269,9 +389,14 @@ Current test areas include:
 
 - configured item behavior
 - project save/load round trips
-- project service load/save workflow
+- project service create/load/save workflows
 - project-wide validation
-- duplicate parameter key detection
+- item and metadata validation
+- Git service behavior
+- Git workflow controller behavior
+- status bar controller behavior
+
+The first configure may download GoogleTest through CMake `FetchContent`.
 
 ---
 
@@ -291,34 +416,6 @@ out/build/x64-debug/docs
 
 ---
 
-## Git Workflows
-
-### Local Git-Managed Project
-
-A project can be created as Git-managed. The project folder becomes the Git working directory.
-
-```text
-ProjectFolder/
-  ProjectName.configured
-  .git/
-```
-
-### Connect Remote
-
-For an open Git-managed project, the Git menu can connect the local repository to a remote URL.
-
-### Clone Remote Project
-
-The home screen can clone a remote repository locally. After clone completes, CONFIGURED searches for a `.configured` file and opens it in the editor.
-
-Clone runs in a worker thread so the UI does not freeze.
-
-### Pull Remote Changes
-
-Git pull is treated as a long-running operation and should run outside the GUI thread.
-
----
-
 ## Configuration File Example
 
 ```json
@@ -327,10 +424,11 @@ Git pull is treated as a long-running operation and should run outside the GUI t
   "description": "Example robotics configuration",
   "author": "Reece Holland",
   "company": "Example Co",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "lastModified": "2026-04-21T10:15:00",
   "robotPlatform": "Rugged Rover",
   "gitManaged": true,
+  "gitCommitHash": "abc1234",
   "root": {
     "name": "System",
     "type": "System",
@@ -349,6 +447,7 @@ Git pull is treated as a long-running operation and should run outside the GUI t
               {
                 "name": "MaxRPM",
                 "type": "Parameter",
+                "description": "",
                 "parameterKey": "max_rpm",
                 "parameterValue": "150",
                 "parameterUnit": "rpm",
@@ -396,13 +495,31 @@ MainWindow
     ConfiguredProject::saveToFile
 ```
 
-### Long-Running Git Commands
+### Git Workflow Boundary
 
-Long-running Git operations should not block the Qt GUI thread. Use a worker object and `QThread` for commands such as:
+User-facing Git orchestration lives in `GitWorkflowController`, while
+`GitService` remains a lower-level command wrapper. Long-running Git operations
+should use worker objects and `QThread`.
+
+Current worker-backed operations:
 
 - clone
 - pull
-- push, if network latency becomes noticeable
+- push
+
+---
+
+## Installer
+
+The `installer/` directory contains WiX project files and PowerShell scripts for
+building Windows installer artifacts:
+
+- `build_msi.ps1`
+- `build_bundle.ps1`
+- `Package.wxs`
+- `Bundle.wxs`
+- `Configured.Setup.wixproj`
+- `Configured.Bundle.wixproj`
 
 ---
 
@@ -410,13 +527,10 @@ Long-running Git operations should not block the Qt GUI thread. Use a worker obj
 
 Planned or likely future work:
 
-- dirty-state tracking for unsaved changes
 - Save As workflow
-- improved Git pull/push UX
 - clearer merge conflict handling
-- branch/upstream status display
-- remote URL management
-- async push support
+- richer branch/upstream status display
+- improved remote URL management
 - stronger typed parameter values
 - undo/redo
 - ROS 2 YAML export
@@ -436,7 +550,8 @@ cmake --build out/build/x64-debug
 ctest --test-dir out/build/x64-debug --output-on-failure
 ```
 
-Please keep changes focused and add tests for project service, validation, persistence, or Git workflow behavior where practical.
+Please keep changes focused and add tests for project service, validation,
+persistence, export, or Git workflow behavior where practical.
 
 ---
 

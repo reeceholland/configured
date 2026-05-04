@@ -139,19 +139,19 @@ MainWindow::MainWindow() {
   gitRefreshButton_->setAutoRaise(true);
   gitRefreshButton_->setStyleSheet(R"(
     QToolButton {
-      background-color: #e6e6e6;
+      background-color: #1f1f1f;
       border: 1px solid #b8b8b8;
       border-radius: 3px;
       padding: 1px 2px;
-      color: #222222;
+      color: #ffffff;
     }
 
     QToolButton:hover {
-      background-color: #f2f2f2;
+      background-color: #5a5a5a;
     }
 
     QToolButton:pressed {
-      background-color: #d6d6d6;
+      background-color: #5a5a5a;
     }
   )");
   statusBar()->addPermanentWidget(gitRefreshButton_);

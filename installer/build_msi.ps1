@@ -1,6 +1,7 @@
 param(
-    [string]$BuildDir = "..\build",
-    [string]$Config = "Release"
+    [string]$BuildDir = (Join-Path $PSScriptRoot "..\out\build\x64-release"),
+    [string]$Config = "Release",
+    [string]$QtBinDir = "C:\Qt\6.10.1\msvc2022_64\bin"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,7 +18,7 @@ if (Test-Path $publishDir) {
 cmake --install $BuildDir --config $Config --prefix $publishDir
 
 Write-Host "=== Deploying Qt runtime ==="
-& "C:\Qt\6.6.0\msvc2019_64\bin\windeployqt.exe" (Join-Path $publishDir "configured.exe")
+& (Join-Path $QtBinDir "windeployqt.exe") (Join-Path $publishDir "Configured.exe")
 
 Write-Host "=== Building MSI ==="
 dotnet build (Join-Path $PSScriptRoot "Configured.Setup.wixproj") -c Release
