@@ -171,19 +171,19 @@ void EditorScreenWidget::addChildToSelected() {
   switch (selectedItem_->type()) {
     case ConfiguredItemType::System:
       childType = ConfiguredItemType::Subsystem;
-      childName = "New Subsystem";
+      childName = "New-Subsystem";
       break;
     case ConfiguredItemType::Subsystem:
       childType = ConfiguredItemType::Component;
-      childName = "New Component";
+      childName = "New-Component";
       break;
     case ConfiguredItemType::Component:
       childType = ConfiguredItemType::Parameter;
-      childName = "New Parameter";
+      childName = "New-Parameter";
       break;
     case ConfiguredItemType::Parameter:
       childType = ConfiguredItemType::Parameter;
-      childName = "New Parameter";
+      childName = "New-Parameter";
       break;
   }
 
