@@ -30,6 +30,7 @@
 #include "core/ConfiguredProject.hpp"
 #include "core/git/CloneWorker.hpp"
 #include "export/JsonProjectExporter.hpp"
+#include "export/RosYamlExporter.hpp"
 #include "export/XmlProjectExporter.hpp"
 #include "ui/ConnectingDialog.hpp"
 #include "ui/EditorScreenWidget.hpp"
@@ -112,6 +113,7 @@ MainWindow::MainWindow() {
   helpAction_ = new QAction("Help", this);
   exportXmlAction_ = new QAction("Export to XML", this);
   exportJsonAction_ = new QAction("Export to JSON", this);
+  exportRosYamlAction_ = new QAction("Export to ROS YAML", this);
 
   gitStatusAction_ = new QAction("Git Status", this);
   gitCommitAction_ = new QAction("Git Commit", this);
@@ -209,6 +211,7 @@ MainWindow::MainWindow() {
   auto* exportMenu = new QMenu(this);
   exportMenu->addAction(exportXmlAction_);
   exportMenu->addAction(exportJsonAction_);
+  exportMenu->addAction(exportRosYamlAction_);
 
   auto* exportButton = new QToolButton(this);
   exportButton->setText("Export");
@@ -376,6 +379,8 @@ MainWindow::MainWindow() {
 
   connect(exportJsonAction_, &QAction::triggered, this, &MainWindow::exportParametersToJson);
 
+  connect(exportRosYamlAction_, &QAction::triggered, this, &MainWindow::exportParametersToRosYaml);
+
   connect(home_, &HomeScreenWidget::helpRequested, this, [this]() {
     showHelp();
   });
@@ -470,6 +475,10 @@ void MainWindow::setEditorActionsEnabled(bool enabled) {
 
   if (exportJsonAction_) {
     exportJsonAction_->setEnabled(enabled);
+  }
+
+  if (exportRosYamlAction_) {
+    exportRosYamlAction_->setEnabled(enabled);
   }
 
   if (gitConnectRemoteAction_) {
@@ -643,6 +652,36 @@ void MainWindow::exportParametersToXml() {
   refreshProjectGitMetadata();
 
   XmlProjectExporter exporter;
+  QString error;
+
+  if (!exporter.exportParameters(*currentProject_, filePath, &error)) {
+    QMessageBox::warning(this, "Export Failed", error);
+    return;
+  }
+
+  QMessageBox::information(this, "Export", "Parameters exported successfully.");
+}
+
+void MainWindow::exportParametersToRosYaml() {
+  if (!currentProject_) {
+    QMessageBox::information(this, "Export", "No project loaded to export.");
+    return;
+  }
+
+  const QString defaultName = currentProject_->name().trimmed().isEmpty()
+                                  ? "parameters.yaml"
+                                  : currentProject_->name().trimmed() + "_parameters.yaml";
+
+  const QString filePath = QFileDialog::getSaveFileName(
+      this, "Export Parameters to ROS YAML", defaultName, "YAML Files (*.yaml *.yml)");
+
+  if (filePath.isEmpty()) {
+    return;
+  }
+
+  refreshProjectGitMetadata();
+
+  RosYamlExporter exporter;
   QString error;
 
   if (!exporter.exportParameters(*currentProject_, filePath, &error)) {

@@ -11,6 +11,15 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Core Gui)
+find_package(yaml-cpp CONFIG REQUIRED)
+
+if(TARGET yaml-cpp::yaml-cpp)
+    set(CONFIGURED_YAML_CPP_TARGET yaml-cpp::yaml-cpp)
+elseif(TARGET yaml-cpp)
+    set(CONFIGURED_YAML_CPP_TARGET yaml-cpp)
+else()
+    message(FATAL_ERROR "yaml-cpp was found, but no supported CMake target was exported")
+endif()
 
 add_executable(Configured
     src/main.cpp
@@ -50,6 +59,9 @@ add_executable(Configured
 
     src/export/JsonProjectExporter.cpp
     include/export/JsonProjectExporter.hpp
+
+    src/export/RosYamlExporter.cpp
+    include/export/RosYamlExporter.hpp
 
     src/core/ProjectService.cpp
     include/core/ProjectService.hpp
@@ -109,6 +121,7 @@ target_link_libraries(Configured PRIVATE
     Qt6::Widgets
     Qt6::Core
     Qt6::Gui
+    ${CONFIGURED_YAML_CPP_TARGET}
 )
 
 include(CTest)

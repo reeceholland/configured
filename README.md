@@ -56,7 +56,7 @@ Current focus areas include:
 - inline and whole-project validation
 - Git-backed project workflows
 - remote clone, pull, push, and branch workflows
-- JSON and XML parameter export
+- JSON, XML, and ROS 2 YAML parameter export
 - maintainable C++/Qt architecture
 
 ---
@@ -178,10 +178,14 @@ Project parameters can be exported to:
 
 - JSON
 - XML
+- ROS 2 YAML
 
 Exports include project metadata and the collected parameter list. For
 Git-managed projects, exports include the current commit hash when available.
 For non-Git-managed projects, exports include the project version.
+
+ROS 2 YAML exports use the project name as the node name and write parameters
+under `ros__parameters`.
 
 ### Git Integration
 
@@ -276,6 +280,7 @@ CloneWorker / GitPullWorker / GitPushWorker
 | `GitPushWorker` | Asynchronous push worker |
 | `JsonProjectExporter` | JSON parameter export |
 | `XmlProjectExporter` | XML parameter export |
+| `RosYamlExporter` | ROS 2 YAML parameter export |
 
 ---
 
@@ -320,6 +325,7 @@ configured/
   - Core
   - Gui
   - Widgets
+- yaml-cpp
 - Git
 - Doxygen, optional, for documentation generation
 
@@ -327,6 +333,12 @@ On Windows, the current presets expect Qt at:
 
 ```text
 C:/Qt/6.10.1/msvc2022_64
+```
+
+The Windows presets also expect vcpkg at:
+
+```text
+C:/dev/vcpkg
 ```
 
 ---
@@ -533,7 +545,6 @@ Planned or likely future work:
 - improved remote URL management
 - stronger typed parameter values
 - undo/redo
-- ROS 2 YAML export
 - richer validation summaries
 - plugin-based configuration extensions
 

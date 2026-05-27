@@ -22,9 +22,11 @@ add_executable(ConfiguredTests
     test_git_service.cpp
     test_git_workflow_controller.cpp
     test_status_bar_controller.cpp
+    test_ros_yaml_exporter.cpp
 
     ../src/core/ConfiguredItem.cpp
     ../src/core/ConfiguredProject.cpp
+    ../src/export/RosYamlExporter.cpp
     ../src/core/ProjectService.cpp
     ../src/core/ProjectMetadataService.cpp
     ../src/core/git/GitService.cpp
@@ -74,6 +76,7 @@ target_link_libraries(ConfiguredTests PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Gui
+    ${CONFIGURED_YAML_CPP_TARGET}
 )
 
 include(GoogleTest)

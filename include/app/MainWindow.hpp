@@ -137,6 +137,14 @@ class MainWindow : public QMainWindow {
   void exportParametersToXml();
 
   /**
+   * @brief Export the current project's parameters to a ROS 2 YAML file.
+   *
+   * Prompts the user to select a file path and exports the parameters of the
+   * currently loaded project in ROS 2 node parameter YAML format.
+   */
+  void exportParametersToRosYaml();
+
+  /**
    * @brief Refresh the Git metadata for the current project.
    *
    * Updates the Git-related metadata (e.g., commit hash) for the currently
@@ -235,6 +243,9 @@ class MainWindow : public QMainWindow {
 
   /// @brief The export to JSON action.
   QAction* exportJsonAction_ = nullptr;
+
+  /// @brief The export to ROS YAML action.
+  QAction* exportRosYamlAction_ = nullptr;
 
   /// @brief The Git initialization action.
   QAction* gitInitAction_ = nullptr;

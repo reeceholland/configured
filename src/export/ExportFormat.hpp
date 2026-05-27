@@ -1,7 +1,3 @@
 #pragma once
 
-enum class ExportFormat
-{
-    ParametersXml,
-    ParametersJson
-};
+enum class ExportFormat { ParametersXml, ParametersJson, ParametersRosYaml };
