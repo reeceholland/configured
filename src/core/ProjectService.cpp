@@ -2,7 +2,7 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QLoggingCategory>
+#include <QtCore/QLoggingCategory>
 
 #include "core/ConfiguredProject.hpp"
 #include "core/ProjectMetadataService.hpp"
