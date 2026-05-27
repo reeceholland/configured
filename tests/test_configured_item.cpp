@@ -20,3 +20,22 @@ TEST(ConfiguredItemTest, AddsChildAndSetsParent) {
   EXPECT_EQ(parent.children()[0].get(), childPtr);
   EXPECT_EQ(childPtr->parent(), &parent);
 }
+
+TEST(ConfiguredItemTest, IgnoresNullChild) {
+  ConfiguredItem parent("System", ConfiguredItemType::System);
+
+  parent.addChild(nullptr);
+
+  EXPECT_TRUE(parent.children().empty());
+}
+
+TEST(ConfiguredItemTest, RemovesExistingChild) {
+  ConfiguredItem parent("System", ConfiguredItemType::System);
+  auto child = std::make_unique<ConfiguredItem>("Camera", ConfiguredItemType::Component);
+  ConfiguredItem* childPtr = child.get();
+  parent.addChild(std::move(child));
+
+  EXPECT_TRUE(parent.removeChild(childPtr));
+
+  EXPECT_TRUE(parent.children().empty());
+}

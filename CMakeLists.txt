@@ -111,10 +111,26 @@ target_link_libraries(Configured PRIVATE
     Qt6::Gui
 )
 
-include(CTest)
-enable_testing()
+if(WIN32)
+    set_target_properties(Configured PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif()
 
-add_subdirectory(tests)
+if(WIN32)
+    set(CONFIGURED_RUNTIME_DESTINATION ".")
+    set(CONFIGURED_LICENSE_DESTINATION ".")
+else()
+    include(GNUInstallDirs)
+    set(CONFIGURED_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    set(CONFIGURED_LICENSE_DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+endif()
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 find_package(Doxygen)
 
@@ -135,5 +151,24 @@ else()
 endif()
 
 install(TARGETS Configured
-    RUNTIME DESTINATION .
+    RUNTIME DESTINATION ${CONFIGURED_RUNTIME_DESTINATION}
 )
+
+install(FILES LICENSE
+    DESTINATION ${CONFIGURED_LICENSE_DESTINATION}
+)
+
+if(UNIX AND NOT APPLE)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_NAME "configured")
+    set(CPACK_PACKAGE_VENDOR "Configured")
+    set(CPACK_PACKAGE_CONTACT "Reece Holland")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Robotics configuration studio")
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6, libqt6gui6, libqt6core6")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+
+    include(CPack)
+endif()

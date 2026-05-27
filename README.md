@@ -329,6 +329,13 @@ On Windows, the current presets expect Qt at:
 C:/Qt/6.10.1/msvc2022_64
 ```
 
+On Ubuntu/Debian, install the build dependencies with:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential cmake git ninja-build qt6-base-dev
+```
+
 ---
 
 ## Configure And Build
@@ -347,6 +354,30 @@ cmake --preset x64-release
 cmake --build out/build/x64-release
 ```
 
+Linux debug build:
+
+```bash
+cmake --preset linux-debug
+cmake --build out/build/linux-debug
+```
+
+Linux release build:
+
+```bash
+cmake --preset linux-release
+cmake --build out/build/linux-release
+```
+
+Ubuntu/Debian package:
+
+```bash
+cmake --preset linux-release
+cmake --build out/build/linux-release
+cpack --config out/build/linux-release/CPackConfig.cmake
+```
+
+The generated `.deb` package is written under `out/build/linux-release`.
+
 ---
 
 ## Run
@@ -361,6 +392,18 @@ Release build:
 
 ```powershell
 out/build/x64-release/Configured.exe
+```
+
+Linux debug build:
+
+```bash
+out/build/linux-debug/Configured
+```
+
+Linux release build:
+
+```bash
+out/build/linux-release/Configured
 ```
 
 ---
@@ -557,7 +600,7 @@ persistence, export, or Git workflow behavior where practical.
 
 ## License
 
-To be defined.
+MIT License. See `LICENSE`.
 
 ---
 

@@ -1,6 +1,7 @@
 #include "ui/RemoteConnectDialog.hpp"
 
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -61,7 +62,7 @@ RemoteConnectDialog::RemoteConnectDialog(QWidget* parent) : QDialog(parent) {
   connect(buttons_, &QDialogButtonBox::accepted, this, [this]() {
     updateValidationState();
 
-    if (remoteUrl().isEmpty() || parentFolder().isEmpty()) {
+    if (remoteUrl().isEmpty() || parentFolder().isEmpty() || !QDir(parentFolder()).exists()) {
       return;
     }
 
@@ -95,14 +96,16 @@ void RemoteConnectDialog::browseForParentFolder() {
 void RemoteConnectDialog::updateValidationState() {
   const bool hasRemoteUrl = !remoteUrl().isEmpty();
   const bool hasParentFolder = !parentFolder().isEmpty();
+  const bool parentFolderExists = hasParentFolder && QDir(parentFolder()).exists();
 
   remoteUrlErrorLabel_->setText(hasRemoteUrl ? "" : "Repository URL is required.");
   remoteUrlErrorLabel_->setVisible(!hasRemoteUrl);
 
-  parentFolderErrorLabel_->setText(hasParentFolder ? "" : "Parent folder is required.");
-  parentFolderErrorLabel_->setVisible(!hasParentFolder);
+  parentFolderErrorLabel_->setText(
+      hasParentFolder ? "Parent folder does not exist." : "Parent folder is required.");
+  parentFolderErrorLabel_->setVisible(!parentFolderExists);
 
   if (buttons_) {
-    buttons_->button(QDialogButtonBox::Ok)->setEnabled(hasRemoteUrl && hasParentFolder);
+    buttons_->button(QDialogButtonBox::Ok)->setEnabled(hasRemoteUrl && parentFolderExists);
   }
 }

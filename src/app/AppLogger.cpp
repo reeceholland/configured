@@ -9,7 +9,7 @@
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QTextStream>
-#include <QtLogging>
+#include <QtCore/QtLogging>
 
 namespace {
 QMutex logMutex;

@@ -6,13 +6,13 @@
   <Bundle
     Name="Configured"
     Manufacturer="Configured"
-    Version="0.3.0.0"
+    Version="0.5.0.0"
     UpgradeCode="5faca027-7864-4044-94b8-dfea656c3fee">
 
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
         Theme="hyperlinkLicense"
-        LicenseUrl="" />
+        LicenseUrl="https://opensource.org/license/mit/" />
     </BootstrapperApplication>
 
     <util:RegistrySearch

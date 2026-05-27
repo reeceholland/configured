@@ -20,7 +20,9 @@ class CloneWorker : public QObject {
  private:
   QString remoteUrl_;
   QString parentFolder_;
+  QString output_;
   QProcess* process_ = nullptr;
 
+  void appendProcessOutput(const QString& text);
   QString deriveClonedPath() const;
 };

@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  windows-build:
     runs-on: windows-latest
 
     steps:
@@ -26,14 +26,60 @@ jobs:
           arch: "win64_msvc2022_64"
           cache: true
 
+      - name: Install vcpkg dependencies
+        shell: pwsh
+        run: '& "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install --triplet x64-windows'
+
       - name: Configure
-        run: cmake -S . -B out/build/x64-debug
+        shell: pwsh
+        run: >
+          cmake -S . -B out/build/x64-debug -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
-        run: cmake --build out/build/x64-debug --config Debug
+        run: cmake --build out/build/x64-debug
+
+      - name: Test
+        run: ctest --test-dir out/build/x64-debug --output-on-failure
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: Configured-windows-debug
-          path: out/build/x64-debug/Debug/Configured.exe
+          path: out/build/x64-debug/Configured.exe
+
+  linux-build:
+    runs-on: ubuntu-latest
+
+    env:
+      QT_QPA_PLATFORM: offscreen
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            ninja-build \
+            qt6-base-dev
+
+      - name: Configure
+        run: cmake --preset linux-debug
+
+      - name: Build
+        run: cmake --build out/build/linux-debug
+
+      - name: Test
+        run: ctest --test-dir out/build/linux-debug --output-on-failure
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Configured-linux-debug
+          path: out/build/linux-debug/Configured
