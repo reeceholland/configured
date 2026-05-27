@@ -4,256 +4,299 @@
   <meta charset="utf-8">
   <title>CONFIGURED Help</title>
   <style>
+    :root {
+      --page: #f7f9fb;
+      --panel: #ffffff;
+      --ink: #17202a;
+      --muted: #526170;
+      --border: #d9e1e8;
+      --accent: #0f766e;
+      --accent-soft: #e6f4f1;
+      --warning: #8a5a00;
+      --warning-soft: #fff4d6;
+      --code: #edf2f7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: "Segoe UI", sans-serif;
-      margin: 20px;
-      line-height: 1.6;
-      color: #000000;
-      background: transparent;
+      margin: 0;
+      padding: 28px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.55;
+      color: var(--ink);
+      background: var(--page);
     }
 
-    h1, h2, h3 {
-      color: #ffffff;
-      margin-top: 24px;
-      margin-bottom: 10px;
+    main {
+      max-width: 980px;
+      margin: 0 auto;
     }
 
-    p, li {
-      color: #f0f0f0;
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      font-weight: 650;
+      color: var(--ink);
     }
 
-    ul {
-      margin-top: 8px;
-      margin-bottom: 16px;
-      padding-left: 22px;
+    h2 {
+      margin: 28px 0 10px;
+      padding-bottom: 6px;
+      font-size: 21px;
+      font-weight: 650;
+      color: var(--ink);
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 16px;
+      font-weight: 650;
+      color: var(--ink);
+    }
+
+    p {
+      margin: 8px 0 12px;
+      color: var(--muted);
+    }
+
+    ul, ol {
+      margin: 8px 0 14px;
+      padding-left: 24px;
+      color: var(--muted);
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    b {
+      color: var(--ink);
+      font-weight: 650;
     }
 
     code {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
       padding: 2px 6px;
       border-radius: 4px;
-      font-family: Consolas, monospace;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      color: var(--ink);
+      background: var(--code);
+    }
+
+    .intro {
+      margin: 0 0 20px;
+      padding: 18px 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
     }
 
     .section {
-      margin-bottom: 20px;
-      padding: 14px 16px;
-      background: rgba(0, 0, 0, 0.20);
-      border-radius: 10px;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
     }
 
-    .note {
-      padding: 12px;
-      background: rgba(74, 144, 226, 0.18);
-      border-left: 4px solid #4a90e2;
+    .note, .warning {
       margin: 14px 0;
-      color: #ffffff;
+      padding: 12px 14px;
       border-radius: 6px;
     }
 
+    .note {
+      color: #134e4a;
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+    }
+
     .warning {
+      color: var(--warning);
+      background: var(--warning-soft);
+      border-left: 4px solid #d99800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .tile {
       padding: 12px;
-      background: rgba(255, 193, 7, 0.16);
-      border-left: 4px solid #ffc107;
-      margin: 14px 0;
-      color: #ffffff;
+      background: #fbfdff;
+      border: 1px solid var(--border);
       border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <h1>CONFIGURED Help</h1>
-
-  <div class="section">
-    <p>
-      Welcome to <b>CONFIGURED</b>, a robotics configuration studio for creating,
-      editing, saving, and exporting structured project configurations.
-    </p>
-    <p>
-      This guide covers the main workflow, project metadata, Git integration,
-      and export features.
-    </p>
-  </div>
-
-  <h2>1. Getting Started</h2>
-  <div class="section">
-    <h3>Create a new project</h3>
-    <ul>
-      <li>Select <b>New Project</b> from the home screen.</li>
-      <li>Enter the project metadata when prompted.</li>
-      <li>If the project is Git-managed, choose a parent folder for the project.</li>
-      <li>The project will then be created and opened in the editor.</li>
-    </ul>
-
-    <h3>Open an existing project</h3>
-    <ul>
-      <li>Select <b>Open Project</b> from the home screen.</li>
-      <li>Choose an existing <code>.configured</code> project file.</li>
-      <li>The project will load into the editor.</li>
-    </ul>
-  </div>
-
-  <h2>2. Editor Overview</h2>
-  <div class="section">
-    <p>
-      The editor is where you manage your project structure and configuration data.
-    </p>
-    <ul>
-      <li><b>Add Child</b> adds a new child item beneath the selected item.</li>
-      <li><b>Remove Selected</b> removes the currently selected item.</li>
-      <li>The editor allows you to build a hierarchical configuration tree.</li>
-      <li>Changes in the editor can be saved back into the project file.</li>
-    </ul>
-  </div>
-
-  <h2>3. Project Menu</h2>
-  <div class="section">
-    <ul>
-      <li><b>Save Project</b> saves the current project to a <code>.configured</code> file.</li>
-      <li><b>Project Metadata</b> opens the metadata dialog for project details.</li>
-      <li><b>Home</b> returns to the home screen.</li>
-    </ul>
-
-    <div class="warning">
-      Returning to the home screen may discard unsaved changes. Save first if you want to keep your work.
+  <main>
+    <h1>CONFIGURED Help</h1>
+    <div class="intro">
+      <p>
+        <b>CONFIGURED</b> helps you create, validate, version, and export structured
+        robotics configuration projects without editing parameter files by hand.
+      </p>
+      <p>
+        A project is saved as a <code>.configured</code> file and can contain project
+        metadata, a configuration hierarchy, parameters, Git state, and export-ready values.
+      </p>
     </div>
-  </div>
 
-  <h2>4. Project Metadata</h2>
-  <div class="section">
-    <p>
-      Project metadata stores identifying information for the current project.
-    </p>
-    <ul>
-      <li><b>Project Name</b> is used in the application title and export metadata.</li>
-      <li><b>Version</b> is used for non-Git-managed projects.</li>
-      <li><b>Git Managed</b> indicates whether the project is linked to a Git repository.</li>
-      <li><b>Git Commit Hash</b> can be stored for Git-managed projects.</li>
-    </ul>
-  </div>
-
-  <h2>5. Saving Projects</h2>
-  <div class="section">
-    <p>
-      Projects are saved as <code>.configured</code> files.
-    </p>
-    <ul>
-      <li>Use <b>Save Project</b> to save the current state of the project.</li>
-      <li>Saving before Git actions ensures the latest project data is written to disk.</li>
-      <li>Saving before export ensures the export reflects the latest project state.</li>
-    </ul>
-
-    <div class="note">
-      It is good practice to save before exporting, checking Git status, or creating a Git commit.
+    <h2>1. Start A Project</h2>
+    <div class="section">
+      <div class="grid">
+        <div class="tile">
+          <h3>New Project</h3>
+          <ul>
+            <li>Select <b>New Project</b> from the home screen.</li>
+            <li>Enter the project name, version, platform, author, and company details.</li>
+            <li>Choose whether the project should be Git-managed.</li>
+            <li>Select a parent folder when creating a saved project.</li>
+          </ul>
+        </div>
+        <div class="tile">
+          <h3>Open Project</h3>
+          <ul>
+            <li>Select <b>Open Project</b> from the home screen.</li>
+            <li>Choose an existing <code>.configured</code> file.</li>
+            <li>The project opens in the editor with its saved metadata and tree.</li>
+          </ul>
+        </div>
+        <div class="tile">
+          <h3>Clone Remote</h3>
+          <ul>
+            <li>Select the remote connection option from the home screen.</li>
+            <li>Enter the repository URL and local parent folder.</li>
+            <li>After cloning, CONFIGURED opens the project file found in the repository.</li>
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <h2>6. Git Integration</h2>
-  <div class="section">
-    <p>
-      CONFIGURED supports basic Git integration for Git-managed projects.
-    </p>
-
-    <h3>Git Init</h3>
-    <ul>
-      <li>Initializes a Git repository in the project folder.</li>
-      <li>Marks the project as Git-managed.</li>
-    </ul>
-
-    <h3>Git Status</h3>
-    <ul>
-      <li>Shows the current working tree status for the project repository.</li>
-    </ul>
-
-    <h3>Git Commit</h3>
-    <ul>
-      <li>Prompts for a commit message.</li>
-      <li>Saves the project before staging and committing changes.</li>
-      <li>Attempts to store the latest commit hash in project metadata.</li>
-    </ul>
-
-    <h3>Git Identity</h3>
-    <ul>
-      <li>Opens the Git identity configuration dialog.</li>
-      <li>Use this to configure Git user details when needed.</li>
-    </ul>
-
-    <div class="note">
-      Git actions are only available for saved projects with a valid project working directory.
+    <h2>2. Edit The Configuration Tree</h2>
+    <div class="section">
+      <p>
+        The editor stores your robot configuration as a hierarchy:
+        <code>System</code>, <code>Subsystem</code>, <code>Component</code>, and
+        <code>Parameter</code>.
+      </p>
+      <ul>
+        <li><b>Add Child</b> creates a child item beneath the selected item.</li>
+        <li><b>Remove Selected</b> deletes the selected item from the tree.</li>
+        <li>The properties panel edits the selected item's name, type, description, and parameter fields.</li>
+        <li>Parameter items include key, value, unit, and required fields.</li>
+      </ul>
+      <div class="note">
+        The tree shows validation state while you work. Fix highlighted fields before saving or exporting.
+      </div>
     </div>
-  </div>
 
-  <h2>7. Exporting</h2>
-  <div class="section">
-    <p>
-      Projects can be exported in both JSON and XML formats.
-    </p>
+    <h2>3. Validation</h2>
+    <div class="section">
+      <p>CONFIGURED validates both individual fields and the full project.</p>
+      <ul>
+        <li>Project names cannot be empty or contain path separators.</li>
+        <li>Item names must use letters, numbers, underscores, or hyphens.</li>
+        <li>Required parameters must have a key and value.</li>
+        <li>Parameter keys must be unique across the project.</li>
+      </ul>
+      <div class="warning">
+        Invalid projects cannot be saved through the normal save workflow.
+      </div>
+    </div>
 
-    <h3>JSON Export</h3>
-    <ul>
-      <li>Exports collected project parameters to a JSON file.</li>
-      <li>Includes project metadata such as project name and Git/version information.</li>
-    </ul>
+    <h2>4. Save And Metadata</h2>
+    <div class="section">
+      <ul>
+        <li><b>Save Project</b> writes the current project to its <code>.configured</code> file.</li>
+        <li><b>Project Metadata</b> edits project identity, version, platform, author, company, and Git-managed state.</li>
+        <li>The last-modified timestamp is updated when the project is saved.</li>
+        <li>Git-managed projects can store the latest commit hash in metadata.</li>
+      </ul>
+      <div class="note">
+        Save before switching workflows so Git actions and exports use the latest project data.
+      </div>
+    </div>
 
-    <h3>XML Export</h3>
-    <ul>
-      <li>Exports collected project parameters to an XML file.</li>
-      <li>Includes the same project metadata as JSON export.</li>
-    </ul>
+    <h2>5. Git Workflows</h2>
+    <div class="section">
+      <p>
+        Git tools are available for saved projects that are marked as Git-managed.
+        Long-running clone, pull, and push actions run in the background.
+      </p>
+      <ul>
+        <li><b>Git Status</b> shows the current repository state.</li>
+        <li><b>Git Identity</b> configures user name and email for commits.</li>
+        <li><b>Commit</b> can save the project, stage changes, and create a commit.</li>
+        <li><b>Switch Branch</b> changes branches after unsaved editor changes are resolved.</li>
+        <li><b>Pull</b> checks local state before pulling remote changes.</li>
+        <li><b>Push</b> sends commits to the configured remote, including first-push setup.</li>
+      </ul>
+      <div class="warning">
+        Save or commit local changes before switching branches or pulling remote changes.
+      </div>
+    </div>
 
-    <p>
-      Exported metadata may include:
-    </p>
-    <ul>
-      <li><b>Project name</b></li>
-      <li><b>Git-managed state</b></li>
-      <li><b>Git commit hash</b> for Git-managed projects</li>
-      <li><b>Version</b> for non-Git-managed projects</li>
-    </ul>
-  </div>
+    <h2>6. Export Parameters</h2>
+    <div class="section">
+      <p>Use the export menu to write collected project parameters to external files.</p>
+      <div class="grid">
+        <div class="tile">
+          <h3>JSON</h3>
+          <p>Exports metadata and collected parameters to a readable JSON document.</p>
+        </div>
+        <div class="tile">
+          <h3>XML</h3>
+          <p>Exports metadata and collected parameters to an XML document.</p>
+        </div>
+      </div>
+      <p>Export metadata may include project name, version, Git-managed state, and Git commit hash.</p>
+    </div>
 
-  <h2>8. Recommended Workflow</h2>
-  <div class="section">
-    <ol style="color:#f0f0f0; padding-left: 22px;">
-      <li>Create or open a project.</li>
-      <li>Edit the configuration tree.</li>
-      <li>Update project metadata if needed.</li>
-      <li>Save the project.</li>
-      <li>Use Git actions if the project is Git-managed.</li>
-      <li>Export to JSON or XML when needed.</li>
-    </ol>
-  </div>
+    <h2>7. Recommended Workflow</h2>
+    <div class="section">
+      <ol>
+        <li>Create, open, or clone a project.</li>
+        <li>Edit the configuration tree and parameter values.</li>
+        <li>Resolve validation errors.</li>
+        <li>Save the project.</li>
+        <li>Commit, pull, or push if the project is Git-managed.</li>
+        <li>Export to JSON or XML when needed.</li>
+      </ol>
+    </div>
 
-  <h2>9. Troubleshooting</h2>
-  <div class="section">
-    <h3>Git actions are unavailable</h3>
-    <ul>
-      <li>Make sure the project has been saved.</li>
-      <li>Make sure Git is installed and available in the system path.</li>
-      <li>Make sure the project folder is a valid Git repository if using status or commit.</li>
-    </ul>
+    <h2>8. Troubleshooting</h2>
+    <div class="section">
+      <h3>Git actions are unavailable</h3>
+      <ul>
+        <li>Make sure the project has been saved.</li>
+        <li>Make sure Git is installed and available in the system path.</li>
+        <li>Make sure the project folder is a valid Git repository.</li>
+        <li>Check that the project is marked as Git-managed in metadata.</li>
+      </ul>
 
-    <h3>Export fails</h3>
-    <ul>
-      <li>Check that a project is open.</li>
-      <li>Check that the chosen file location is writable.</li>
-      <li>Save the project before exporting.</li>
-    </ul>
+      <h3>Export fails</h3>
+      <ul>
+        <li>Make sure a project is open.</li>
+        <li>Choose a writable file location.</li>
+        <li>Resolve duplicate or empty parameter keys before exporting.</li>
+      </ul>
 
-    <h3>Project metadata looks out of date</h3>
-    <ul>
-      <li>Save the project again.</li>
-      <li>For Git-managed projects, ensure the repository contains a valid commit history.</li>
-    </ul>
-  </div>
-
-  <h2>10. About</h2>
-  <div class="section">
-    <p>
-      CONFIGURED is designed to provide a simple desktop interface for managing
-      structured robotics configuration projects and exporting them into standard formats.
-    </p>
-  </div>
+      <h3>The project looks out of date</h3>
+      <ul>
+        <li>Save the project again.</li>
+        <li>Refresh Git status after commit, pull, or push operations.</li>
+        <li>For Git-managed projects, confirm the repository has at least one commit.</li>
+      </ul>
+    </div>
+  </main>
 </body>
 </html>

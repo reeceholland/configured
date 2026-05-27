@@ -2,25 +2,106 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Configure Configured Debug",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/run-vsdev.ps1",
+        "cmake",
+        "--preset",
+        "x64-debug"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
       "label": "Build Configured Debug",
       "type": "shell",
-      "command": "cmake --build out/build/x64-debug",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/run-vsdev.ps1",
+        "cmake",
+        "--build",
+        "out/build/x64-debug"
+      ],
       "problemMatcher": "$msCompile",
-      "group": "build"
+      "group": "build",
+      "dependsOn": "Configure Configured Debug",
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
     },
     {
       "label": "Generate Docs",
       "type": "shell",
-      "command": "cmake --build out/build/x64-debug --target doc",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/run-vsdev.ps1",
+        "cmake",
+        "--build",
+        "out/build/x64-debug",
+        "--target",
+        "doc"
+      ],
       "problemMatcher": [],
-      "group": "build"
+      "group": "build",
+      "dependsOn": "Configure Configured Debug",
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
     },
     {
       "label": "Run Tests",
       "type": "shell",
-      "command": "ctest --test-dir out/build/x64-debug --output-on-failure",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/run-vsdev.ps1",
+        "ctest",
+        "--test-dir",
+        "out/build/x64-debug",
+        "--output-on-failure"
+      ],
       "problemMatcher": [],
-      "group": "test"
+      "group": "test",
+      "dependsOn": "Build Configured Debug",
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      }
     }
   ]
 }

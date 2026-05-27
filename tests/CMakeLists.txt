@@ -19,6 +19,7 @@ add_executable(ConfiguredTests
     test_validation.cpp
     test_project_service.cpp
     test_project_validator.cpp
+    test_project_metadata_validator.cpp
     test_git_service.cpp
     test_git_workflow_controller.cpp
     test_status_bar_controller.cpp

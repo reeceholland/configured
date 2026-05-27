@@ -111,10 +111,17 @@ target_link_libraries(Configured PRIVATE
     Qt6::Gui
 )
 
-include(CTest)
-enable_testing()
+if(WIN32)
+    set_target_properties(Configured PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif()
 
-add_subdirectory(tests)
+include(CTest)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 find_package(Doxygen)
 
@@ -136,4 +143,8 @@ endif()
 
 install(TARGETS Configured
     RUNTIME DESTINATION .
+)
+
+install(FILES LICENSE
+    DESTINATION .
 )

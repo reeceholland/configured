@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <QFileInfo>
 #include <QTemporaryDir>
 
 #include "core/ConfiguredProject.hpp"
@@ -118,4 +119,40 @@ TEST(ProjectServiceTest, SaveProjectRejectsDuplicateParameterKeys) {
   QString error;
   EXPECT_FALSE(service.saveProject(project, filePath, error));
   EXPECT_FALSE(error.isEmpty());
+}
+
+TEST(ProjectServiceTest, CreateProjectRejectsInvalidMetadataName) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+
+  ProjectMetadata metadata;
+  metadata.name = "bad/name";
+  metadata.gitManaged = false;
+
+  ProjectService service(nullptr);
+  const ProjectCreationResult result = service.createProject(metadata, dir.path());
+
+  EXPECT_FALSE(result.success);
+  EXPECT_EQ(result.project, nullptr);
+  EXPECT_FALSE(result.errorMessage.isEmpty());
+}
+
+TEST(ProjectServiceTest, CreateProjectWritesConfiguredFile) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+
+  ProjectMetadata metadata;
+  metadata.name = "ReleaseReady";
+  metadata.author = "Reece";
+  metadata.version = "1.0.0";
+  metadata.gitManaged = false;
+
+  ProjectService service(nullptr);
+  const ProjectCreationResult result = service.createProject(metadata, dir.path());
+
+  ASSERT_TRUE(result.success) << result.errorMessage.toStdString();
+  ASSERT_NE(result.project, nullptr);
+  EXPECT_EQ(result.project->name(), "ReleaseReady");
+  EXPECT_TRUE(QFileInfo::exists(result.projectFilePath));
+  EXPECT_TRUE(result.projectFilePath.endsWith("ReleaseReady.configured"));
 }
