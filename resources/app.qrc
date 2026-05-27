@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>images/home_background.jpg</file>
+        <file>images/home_background.png</file>
         <file>help/help.html</file>
     </qresource>
 </RCC>

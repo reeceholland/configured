@@ -6,7 +6,7 @@
 #include <QVBoxLayout>
 
 HomeScreenWidget::HomeScreenWidget(QWidget* parent) : QWidget(parent) {
-  background_ = QPixmap(":/images/home_background.jpg");
+  background_ = QPixmap(":/images/home_background.png");
 
   auto* rootLayout = new QVBoxLayout(this);
   rootLayout->setAlignment(Qt::AlignCenter);

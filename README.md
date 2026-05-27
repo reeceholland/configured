@@ -368,6 +368,16 @@ cmake --preset linux-release
 cmake --build out/build/linux-release
 ```
 
+Ubuntu/Debian package:
+
+```bash
+cmake --preset linux-release
+cmake --build out/build/linux-release
+cpack --config out/build/linux-release/CPackConfig.cmake
+```
+
+The generated `.deb` package is written under `out/build/linux-release`.
+
 ---
 
 ## Run
