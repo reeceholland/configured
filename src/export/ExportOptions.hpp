@@ -4,8 +4,7 @@
 
 #include "export/ExportFormat.hpp"
 
-struct ExportOptions
-{
-    ExportFormat format;
-    QString outputPath;
+struct ExportOptions {
+  ExportFormat format;
+  QString outputPath;
 };

@@ -80,8 +80,7 @@ void writeLogMessage(QtMsgType type, const QMessageLogContext& context, const QS
 
   QTextStream stream(&file);
   stream << QDateTime::currentDateTime().toString(Qt::ISODateWithMs) << " ["
-         << messageTypeName(type) << "] " << qFormatLogMessage(type, context, message)
-         << Qt::endl;
+         << messageTypeName(type) << "] " << qFormatLogMessage(type, context, message) << Qt::endl;
 }
 }  // namespace
 
