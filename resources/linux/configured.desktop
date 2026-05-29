@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=CONFIGURED
+Comment=Robotics Configuration Studio
+Exec=Configured
+Terminal=false
+Categories=Development;Engineering;

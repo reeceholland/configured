@@ -5,3 +5,4 @@ docs/_doxygen/*
 installer/bin/*
 installer/obj/*
 installer/publish/*
+_CPack_Packages/*
