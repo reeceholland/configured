@@ -445,6 +445,18 @@ The first configure may download GoogleTest through CMake `FetchContent`.
 
 ## Generate Documentation
 
+The public documentation site is built with Sphinx and Read the Docs from the
+files in `docs/`. The root `.readthedocs.yaml` file is ready to connect in the
+Read the Docs dashboard.
+
+For a local Read the Docs-style build:
+
+```powershell
+python -m pip install -r docs/requirements.txt
+sphinx-build -b html docs out/docs/readthedocs
+```
+
+The repository also keeps Doxygen configuration for local C++ API docs.
 If Doxygen is installed:
 
 ```powershell
@@ -576,7 +588,7 @@ Planned or likely future work:
 - improved remote URL management
 - stronger typed parameter values
 - undo/redo
-- ROS 2 YAML export
+- additional exporter formats
 - richer validation summaries
 - plugin-based configuration extensions
 
