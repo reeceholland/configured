@@ -71,7 +71,7 @@ ProjectMetadataDialog::ProjectMetadataDialog(const ProjectMetadata& initialValue
   connect(versionEdit_, &QLineEdit::textChanged, this, &ProjectMetadataDialog::refreshValidationUi);
   connect(robotPlatformEdit_, &QLineEdit::textChanged, this,
           &ProjectMetadataDialog::refreshValidationUi);
-  connect(gitManagedCheck_, &QCheckBox::checkStateChanged, this,
+  connect(gitManagedCheck_, &QCheckBox::stateChanged, this,
           &ProjectMetadataDialog::refreshValidationUi);
 
   refreshValidationUi();
