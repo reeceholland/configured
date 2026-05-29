@@ -25,3 +25,4 @@ build support.
    user-guide
    development
    release
+   api
