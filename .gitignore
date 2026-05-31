@@ -4,3 +4,4 @@ build/*
 installer/bin/*
 installer/obj/*
 installer/publish/*
+docs/_doxygen/*

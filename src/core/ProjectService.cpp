@@ -167,3 +167,51 @@ std::unique_ptr<ConfiguredProject> ProjectService::loadProject(const QString& pr
 
   return project;
 }
+
+ProjectSaveAsResult ProjectService::saveProjectAs(ConfiguredProject& project,
+                                                  const QString& baseDirectory) const {
+  ProjectSaveAsResult result;
+
+  const QString projectName = project.name().trimmed();
+  if (projectName.isEmpty()) {
+    result.errorMessage = "Project name cannot be empty.";
+    return result;
+  }
+
+  const ValidationResult validationResult = ProjectValidator().validate(project);
+  if (!validationResult.isValid()) {
+    result.errorMessage = validationResult.messages().first().message;
+    return result;
+  }
+
+  QDir baseDir(baseDirectory);
+  if (!baseDir.exists()) {
+    result.errorMessage = "Base directory does not exist.";
+    return result;
+  }
+
+  const QString projectFolderPath = baseDir.filePath(projectName);
+  if (!baseDir.exists(projectName) && !baseDir.mkdir(projectName)) {
+    result.errorMessage = "Could not create project folder.";
+    return result;
+  }
+
+  const QString projectFilePath = QDir(projectFolderPath).filePath(projectName + ".configured");
+  const bool originalGitManaged = project.isGitManaged();
+  const QString originalGitCommitHash = project.gitCommitHash();
+
+  project.setGitManaged(false);
+  project.setGitCommitHash("");
+
+  QString error;
+  if (!saveProject(project, projectFilePath, error)) {
+    project.setGitManaged(originalGitManaged);
+    project.setGitCommitHash(originalGitCommitHash);
+    result.errorMessage = error;
+    return result;
+  }
+
+  result.success = true;
+  result.projectFilePath = projectFilePath;
+  return result;
+}

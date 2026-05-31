@@ -187,6 +187,15 @@ class MainWindow : public QMainWindow {
    */
   void updateGitStatusBar();
 
+  /**
+   * @brief Handle the "Save As" action for the current project.
+   *
+   * Prompts the user to select a parent folder, saves the current project inside its own project
+   * folder, and updates the active project path and window title after a successful save. Displays
+   * error messages if no project is loaded or if the save operation fails.
+   */
+  void onSaveAs();
+
  private:
   /// @brief The main stacked widget that holds the different screens (home, editor, help).
   QStackedWidget* stack_ = nullptr;
@@ -260,6 +269,9 @@ class MainWindow : public QMainWindow {
 
   /// @brief The export action.
   QAction* exportAction_ = nullptr;
+
+  /// @brief The "Save As" action for the current project.
+  QAction* saveAsAction_ = nullptr;
 
   /// @brief The last central widget that was displayed.
   QWidget* lastCentral_ = nullptr;

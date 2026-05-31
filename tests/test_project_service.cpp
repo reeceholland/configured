@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <QDir>
 #include <QFileInfo>
 #include <QTemporaryDir>
 
@@ -155,4 +156,46 @@ TEST(ProjectServiceTest, CreateProjectWritesConfiguredFile) {
   EXPECT_EQ(result.project->name(), "ReleaseReady");
   EXPECT_TRUE(QFileInfo::exists(result.projectFilePath));
   EXPECT_TRUE(result.projectFilePath.endsWith("ReleaseReady.configured"));
+}
+
+TEST(ProjectServiceTest, SaveProjectAsWritesProjectInOwnFolderAndReturnsPath) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+
+  ConfiguredProject project;
+  project.createSampleProject();
+  project.setName("CopiedProject");
+
+  ProjectService service(nullptr);
+  const ProjectSaveAsResult result = service.saveProjectAs(project, dir.path());
+
+  const QString expectedFolder = QDir(dir.path()).filePath("CopiedProject");
+  const QString expectedFile = QDir(expectedFolder).filePath("CopiedProject.configured");
+
+  ASSERT_TRUE(result.success) << result.errorMessage.toStdString();
+  EXPECT_EQ(result.projectFilePath, expectedFile);
+  EXPECT_TRUE(QFileInfo::exists(expectedFile));
+}
+
+TEST(ProjectServiceTest, SaveProjectAsCreatesStandaloneNonGitCopy) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+
+  ConfiguredProject project;
+  project.createSampleProject();
+  project.setName("StandaloneCopy");
+  project.setGitManaged(true);
+  project.setGitCommitHash("abc123");
+
+  ProjectService service(nullptr);
+  const ProjectSaveAsResult result = service.saveProjectAs(project, dir.path());
+
+  ASSERT_TRUE(result.success) << result.errorMessage.toStdString();
+  EXPECT_FALSE(project.isGitManaged());
+  EXPECT_TRUE(project.gitCommitHash().isEmpty());
+
+  ConfiguredProject loaded;
+  QString error;
+  ASSERT_TRUE(loaded.loadFromFile(result.projectFilePath, &error)) << error.toStdString();
+  EXPECT_FALSE(loaded.isGitManaged());
 }

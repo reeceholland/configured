@@ -24,6 +24,7 @@
 #include <QThread>
 #include <QToolBar>
 #include <QToolButton>
+#include <QtCore/QLoggingCategory>
 
 #include "app/GitWorkflowController.hpp"
 #include "app/StatusBarController.hpp"
@@ -38,6 +39,8 @@
 #include "ui/HomeScreenWidget.hpp"
 #include "ui/ProjectMetadataDialog.hpp"
 #include "ui/RemoteConnectDialog.hpp"
+
+Q_LOGGING_CATEGORY(logMainWindow, "configured.app.mainwindow")
 
 MainWindow::MainWindow() {
   setWindowTitle("CONFIGURED");
@@ -104,6 +107,7 @@ MainWindow::MainWindow() {
   toolbar_->setMovable(false);
 
   saveProjectAction_ = new QAction("Save Project", this);
+  saveAsAction_ = new QAction("Save As", this);
   addChildAction_ = new QAction("Add Child", this);
   removeItemAction_ = new QAction("Remove Selected", this);
   goHomeAction_ = new QAction("Home", this);
@@ -170,6 +174,7 @@ MainWindow::MainWindow() {
 
   auto* projectMenu = new QMenu(this);
   projectMenu->addAction(saveProjectAction_);
+  projectMenu->addAction(saveAsAction_);
   projectMenu->addAction(projectMetadataAction_);
   projectMenu->addSeparator();
   projectMenu->addAction(goHomeAction_);
@@ -279,6 +284,8 @@ MainWindow::MainWindow() {
     updateWindowTitle();
     updateGitStatusBar();
   });
+
+  connect(saveAsAction_, &QAction::triggered, this, &MainWindow::onSaveAs);
 
   connect(addChildAction_, &QAction::triggered, this, [this]() {
     editor_->addChildToSelected();
@@ -828,4 +835,33 @@ void MainWindow::updateGitStatusBar() {
                                     stack_ && stack_->currentWidget() == editor_});
 
   statusBarController_->refresh();
+}
+
+void MainWindow::onSaveAs() {
+  if (!currentProject_) {
+    QMessageBox::warning(this, "Save Failed", "No project is currently open.");
+    return;
+  }
+
+  const QString baseDirectory =
+      QFileDialog::getExistingDirectory(this, "Select Parent Folder for Project");
+
+  if (baseDirectory.isEmpty()) {
+    return;
+  }
+
+  const ProjectSaveAsResult result = projectService_.saveProjectAs(*currentProject_, baseDirectory);
+  if (!result.success) {
+    QMessageBox::warning(this, "Save Failed", result.errorMessage);
+    qCWarning(logMainWindow) << "Failed to save project:" << result.errorMessage;
+    return;
+  }
+
+  QMessageBox::information(this, "Save Successful", "Project saved successfully.");
+  currentProjectFilePath_ = result.projectFilePath;
+  currentProject_->clearDirtyFlags();
+  editor_->refreshTree();
+  hasUnsavedChanges_ = false;
+  updateWindowTitle();
+  updateGitStatusBar();
 }
