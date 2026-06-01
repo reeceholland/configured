@@ -5,17 +5,16 @@
 class QPushButton;
 class QTextBrowser;
 
-class HelpScreenWidget : public QWidget
-{
-    Q_OBJECT
+class HelpScreenWidget : public QWidget {
+  Q_OBJECT
 
-public:
-    explicit HelpScreenWidget(QWidget *parent = nullptr);
+ public:
+  explicit HelpScreenWidget(QWidget* parent = nullptr);
 
-signals:
-    void backRequested();
+ signals:
+  void backRequested();
 
-private:
-    QTextBrowser *helpText_ = nullptr;
-    QPushButton *backButton_ = nullptr;
+ private:
+  QTextBrowser* helpText_ = nullptr;
+  QPushButton* backButton_ = nullptr;
 };

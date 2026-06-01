@@ -101,8 +101,8 @@ void RemoteConnectDialog::updateValidationState() {
   remoteUrlErrorLabel_->setText(hasRemoteUrl ? "" : "Repository URL is required.");
   remoteUrlErrorLabel_->setVisible(!hasRemoteUrl);
 
-  parentFolderErrorLabel_->setText(
-      hasParentFolder ? "Parent folder does not exist." : "Parent folder is required.");
+  parentFolderErrorLabel_->setText(hasParentFolder ? "Parent folder does not exist."
+                                                   : "Parent folder is required.");
   parentFolderErrorLabel_->setVisible(!parentFolderExists);
 
   if (buttons_) {

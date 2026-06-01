@@ -7,13 +7,20 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 
+/**
+ * @brief Dialog that collects clone/connect details for a remote repository.
+ */
 class RemoteConnectDialog : public QDialog {
   Q_OBJECT
 
  public:
+  /// Create a remote connection dialog.
   explicit RemoteConnectDialog(QWidget* parent = nullptr);
 
+  /// Repository URL entered by the user.
   QString remoteUrl() const;
+
+  /// Parent folder selected as the clone destination.
   QString parentFolder() const;
 
  private:

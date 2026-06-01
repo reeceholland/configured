@@ -1,3 +1,7 @@
+# CONFIGURED C++ formatting.
+# Start from Google style and keep the repo's Qt-friendly 100-column width.
+---
+Language: Cpp
 BasedOnStyle: Google
 IndentWidth: 2
 TabWidth: 2

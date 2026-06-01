@@ -1,8 +1,8 @@
 #include "core/git/GitService.hpp"
 
 #include <QDir>
-#include <QtCore/QLoggingCategory>
 #include <QProcess>
+#include <QtCore/QLoggingCategory>
 
 Q_LOGGING_CATEGORY(logGitService, "configured.core.git")
 
