@@ -26,11 +26,24 @@ struct ProjectCreationResult {
 };
 
 /**
+ * @brief Result returned after saving a copy of the active project.
+ */
+struct ProjectSaveAsResult {
+  /// True when the copy was written successfully.
+  bool success = false;
+
+  /// User-facing failure details when success is false.
+  QString errorMessage;
+
+  /// Full path to the copied .configured project file.
+  QString projectFilePath;
+};
+
+/**
  * @brief Coordinates project file operations and optional Git repository setup.
- *
- * ProjectService is the application-level boundary around creating, loading,
- * saving, and updating ConfiguredProject instances. It delegates Git-specific
- * work to GitService when a project is marked as Git-managed.
+ * ProjectService is the application-level boundary around creating, loading, saving, and updating
+ * ConfiguredProject instances. It delegates Git-specific work to GitService when a project is
+ * marked as Git-managed.
  */
 class ProjectService {
  public:
@@ -86,6 +99,14 @@ class ProjectService {
    */
   std::unique_ptr<ConfiguredProject> loadProject(const QString& projectFilePath,
                                                  QString& error) const;
+
+  /**
+   * @brief Save a standalone copy of a project inside its own project folder.
+   * @param project Project model to copy.
+   * @param baseDirectory Parent folder where the project folder will be created.
+   * @return Save As result containing either the copied file path or an error message.
+   */
+  ProjectSaveAsResult saveProjectAs(ConfiguredProject& project, const QString& baseDirectory) const;
 
  private:
   GitService* gitService_ = nullptr;
