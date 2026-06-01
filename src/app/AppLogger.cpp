@@ -1,5 +1,7 @@
 #include "app/AppLogger.hpp"
 
+#include <QtCore/qlogging.h>
+
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
@@ -9,7 +11,6 @@
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QTextStream>
-#include <QtCore/QtLogging>
 
 namespace {
 QMutex logMutex;

@@ -158,6 +158,10 @@ install(FILES LICENSE
     DESTINATION ${CONFIGURED_LICENSE_DESTINATION}
 )
 
+install(FILES resources/linux/configured.desktop
+    DESTINATION share/applications
+)
+
 if(UNIX AND NOT APPLE)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGE_NAME "configured")
