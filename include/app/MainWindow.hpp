@@ -196,6 +196,9 @@ class MainWindow : public QMainWindow {
    */
   void onSaveAs();
 
+  std::unique_ptr<ConfiguredProject> loadProjectWithProgress(const QString& filePath,
+                                                             QString& error);
+
  private:
   /// @brief The main stacked widget that holds the different screens (home, editor, help).
   QStackedWidget* stack_ = nullptr;

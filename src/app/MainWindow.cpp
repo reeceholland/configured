@@ -13,12 +13,14 @@
 #include "app/MainWindow.hpp"
 
 #include <QAction>
+#include <QCoreApplication>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QThread>
@@ -68,7 +70,7 @@ MainWindow::MainWindow() {
   connect(gitWorkflowController_.get(), &GitWorkflowController::reloadProjectRequested, this,
           [this](const QString& projectFilePath) {
             QString error;
-            auto reloadedProject = projectService_.loadProject(projectFilePath, error);
+            auto reloadedProject = loadProjectWithProgress(projectFilePath, error);
             if (!reloadedProject) {
               QMessageBox::warning(this, "Reload Project Failed", error);
               return;
@@ -330,7 +332,7 @@ MainWindow::MainWindow() {
     }
 
     QString error;
-    auto loadedProject = projectService_.loadProject(filePath, error);
+    auto loadedProject = loadProjectWithProgress(filePath, error);
 
     if (!loadedProject) {
       QMessageBox::warning(this, "Open Failed", error);
@@ -789,7 +791,7 @@ void MainWindow::promptAndCloneRemoteProject() {
             }
 
             QString error;
-            auto loadedProject = projectService_.loadProject(projectFilePath, error);
+            auto loadedProject = loadProjectWithProgress(projectFilePath, error);
 
             if (!loadedProject) {
               QMessageBox::warning(this, "Open Failed", error);
@@ -864,4 +866,21 @@ void MainWindow::onSaveAs() {
   hasUnsavedChanges_ = false;
   updateWindowTitle();
   updateGitStatusBar();
+}
+
+std::unique_ptr<ConfiguredProject> MainWindow::loadProjectWithProgress(const QString& filePath,
+                                                                       QString& error) {
+  QProgressDialog progressDialog("Loading project...", QString(), 0, 0, this);
+  progressDialog.setWindowModality(Qt::ApplicationModal);
+  progressDialog.setCancelButton(nullptr);
+  progressDialog.setMinimumDuration(0);
+  progressDialog.show();
+
+  QCoreApplication::processEvents();
+
+  auto project = projectService_.loadProject(filePath, error);
+
+  progressDialog.close();
+
+  return project;
 }
