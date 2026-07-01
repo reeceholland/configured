@@ -61,6 +61,8 @@ add_executable(ConfiguredTests
     ../include/app/StatusBarController.hpp
 )
 
+target_compile_features(ConfiguredTests PRIVATE cxx_std_23)
+
 if (MSVC)
     target_compile_options(ConfiguredTests PRIVATE /EHsc)
 endif()

@@ -273,9 +273,10 @@ MainWindow::MainWindow() {
     }
 
     // MainWindow owns the active project session; ProjectService owns persistence.
-    QString error;
-    if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, error)) {
-      QMessageBox::warning(this, "Save Failed", error);
+
+    auto saveResult = projectService_.saveProject(*currentProject_, currentProjectFilePath_);
+    if (!saveResult) {
+      QMessageBox::warning(this, "Save Failed", saveResult.error());
       return;
     }
 
@@ -731,8 +732,9 @@ void MainWindow::editProjectMetadata() {
     return;
   }
 
-  if (!projectService_.saveProject(*currentProject_, currentProjectFilePath_, error)) {
-    QMessageBox::warning(this, "Metadata Update Failed", error);
+  auto saveResult = projectService_.saveProject(*currentProject_, currentProjectFilePath_);
+  if (!saveResult) {
+    QMessageBox::warning(this, "Metadata Update Failed", saveResult.error());
     return;
   }
 
@@ -878,9 +880,15 @@ std::unique_ptr<ConfiguredProject> MainWindow::loadProjectWithProgress(const QSt
 
   QCoreApplication::processEvents();
 
-  auto project = projectService_.loadProject(filePath, error);
+  auto loadedProject = projectService_.loadProject(filePath);
 
   progressDialog.close();
 
-  return project;
+  if (!loadedProject) {
+    error = loadedProject.error();
+    return nullptr;
+  }
+
+  error.clear();
+  return std::move(loadedProject.value());
 }

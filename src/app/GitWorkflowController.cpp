@@ -142,9 +142,9 @@ void GitWorkflowController::promptAndCommit() {
     messageBox.exec();
 
     if (messageBox.clickedButton() == saveAndCommitButton) {
-      QString output;
-      if (!projectService_->saveProject(*context_.project, context_.projectFilePath, output)) {
-        emit warningRequested("Git Commit", "Project could not be saved.\n\n" + output);
+      auto saveResult = projectService_->saveProject(*context_.project, context_.projectFilePath);
+      if (!saveResult) {
+        emit warningRequested("Git Commit", "Project could not be saved.\n\n" + saveResult.error());
         return;
       }
 
@@ -470,10 +470,14 @@ void GitWorkflowController::runNewProjectGitOnboarding() {
   }
 
   if (state.createInitialCommit) {
-    if (!projectService_ || !context_.project
-        || !projectService_->saveProject(*context_.project, context_.projectFilePath, output)) {
-      emit warningRequested("Git Setup",
-                            "Failed to save project before initial commit.\n\n" + output);
+    if (!projectService_ || !context_.project) {
+      emit warningRequested("Git Setup", "Project service or project is not available.\n\n");
+      return;
+    }
+    auto saveResult = projectService_->saveProject(*context_.project, context_.projectFilePath);
+    if (!saveResult) {
+      emit warningRequested(
+          "Git Setup", "Failed to save project before initial commit.\n\n" + saveResult.error());
       return;
     }
 

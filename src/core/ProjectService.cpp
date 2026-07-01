@@ -68,8 +68,6 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   return result;
 }
 
-#include <QFileInfo>
-
 bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
                                            const ProjectMetadata& metadata,
                                            const QString& projectFilePath, QString& error) const {
@@ -117,55 +115,51 @@ bool ProjectService::ensureGitInitialized(const QString& repoDir, QString& error
   return true;
 }
 
-bool ProjectService::saveProject(ConfiguredProject& project, const QString& projectFilePath,
-                                 QString& error) const {
-  error.clear();
-
+std::expected<void, QString> ProjectService::saveProject(ConfiguredProject& project,
+                                                         const QString& projectFilePath) const {
   if (projectFilePath.trimmed().isEmpty()) {
-    error = "Project file path is empty.";
-    return false;
+    return std::unexpected(QStringLiteral("Project file path is empty."));
   }
 
   const QFileInfo fileInfo(projectFilePath);
   if (!fileInfo.absoluteDir().exists()) {
-    error = "Project folder does not exist.";
-    return false;
+    return std::unexpected(QStringLiteral("Project folder does not exist."));
   }
 
   const ValidationResult validationResult = ProjectValidator().validate(project);
   if (!validationResult.isValid()) {
-    error = validationResult.messages().first().message;
-    return false;
+    return std::unexpected(validationResult.messages().first().message);
   }
 
+  QString error;
   if (!project.saveToFile(projectFilePath, &error)) {
-    error = error.isEmpty() ? "Could not save project file." : error;
-    return false;
+    return std::unexpected(error.isEmpty() ? "Could not save project file." : error);
   }
 
-  return true;
+  return {};
 }
 
-std::unique_ptr<ConfiguredProject> ProjectService::loadProject(const QString& projectFilePath,
-                                                               QString& error) const {
-  error.clear();
-
+std::expected<std::unique_ptr<ConfiguredProject>, QString> ProjectService::loadProject(
+    const QString& projectFilePath) const {
   if (projectFilePath.trimmed().isEmpty()) {
-    error = "Project file path is empty.";
-    return nullptr;
+    return std::unexpected(QStringLiteral("Project file path is empty."));
   }
 
   auto project = std::make_unique<ConfiguredProject>();
 
   QString loadError;
   if (!project->loadFromFile(projectFilePath, &loadError)) {
-    error = "Could not load project file. " + (loadError.isEmpty() ? QString() : loadError);
     qCCritical(logProjectService) << "Failed to load project from" << projectFilePath << ":"
                                   << loadError;
-    return nullptr;
+    QString message = QStringLiteral("Could not load project file.");
+    if (!loadError.isEmpty()) {
+      message += QStringLiteral(" ");
+      message += loadError;
+    }
+    return std::unexpected(message);
   }
 
-  return project;
+  return std::move(project);
 }
 
 ProjectSaveAsResult ProjectService::saveProjectAs(ConfiguredProject& project,
@@ -203,11 +197,12 @@ ProjectSaveAsResult ProjectService::saveProjectAs(ConfiguredProject& project,
   project.setGitManaged(false);
   project.setGitCommitHash("");
 
-  QString error;
-  if (!saveProject(project, projectFilePath, error)) {
+  auto saveResult = saveProject(project, projectFilePath);
+  if (!saveResult) {
     project.setGitManaged(originalGitManaged);
     project.setGitCommitHash(originalGitCommitHash);
-    result.errorMessage = error;
+    result.errorMessage =
+        saveResult.error().isEmpty() ? "Could not save project file." : saveResult.error();
     return result;
   }
 

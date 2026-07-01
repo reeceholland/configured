@@ -34,11 +34,10 @@ TEST(ProjectServiceTest, LoadProjectLoadsExistingProject) {
 
   ProjectService service(nullptr);
 
-  QString error;
-  auto loaded = service.loadProject(filePath, error);
+  auto loaded = service.loadProject(filePath);
 
-  ASSERT_NE(loaded, nullptr) << error.toStdString();
-  EXPECT_EQ(loaded->name(), "Loaded Project");
+  ASSERT_TRUE(loaded) << loaded.error().toStdString();
+  EXPECT_EQ(loaded.value()->name(), "Loaded Project");
 }
 
 /**
@@ -47,11 +46,10 @@ TEST(ProjectServiceTest, LoadProjectLoadsExistingProject) {
 TEST(ProjectServiceTest, LoadProjectRejectEmptyPath) {
   ProjectService service(nullptr);
 
-  QString error;
-  auto loaded = service.loadProject("", error);
+  auto loaded = service.loadProject("");
 
-  ASSERT_EQ(loaded, nullptr);
-  EXPECT_FALSE(error.isEmpty());
+  ASSERT_FALSE(loaded);
+  EXPECT_FALSE(loaded.error().isEmpty());
 }
 
 /**
@@ -63,9 +61,9 @@ TEST(ProjectServiceTest, SaveProjectRejectEmptyPath) {
   ConfiguredProject project;
   project.createSampleProject();
 
-  QString error;
-  EXPECT_FALSE(service.saveProject(project, "", error));
-  EXPECT_FALSE(error.isEmpty());
+  auto result = service.saveProject(project, "");
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(result.error().isEmpty());
 }
 
 /**
@@ -84,10 +82,11 @@ TEST(ProjectServiceTest, SaveProjectWritesFile) {
 
   ProjectService service(nullptr);
 
-  QString error;
-  EXPECT_TRUE(service.saveProject(project, filePath, error)) << error.toStdString();
+  auto saveResult = service.saveProject(project, filePath);
+  ASSERT_TRUE(saveResult) << saveResult.error().toStdString();
 
   ConfiguredProject loaded;
+  QString error;
   ASSERT_TRUE(loaded.loadFromFile(filePath, &error)) << error.toStdString();
   EXPECT_EQ(loaded.name(), "Saved Project");
 }
@@ -117,9 +116,9 @@ TEST(ProjectServiceTest, SaveProjectRejectsDuplicateParameterKeys) {
 
   ProjectService service(nullptr);
 
-  QString error;
-  EXPECT_FALSE(service.saveProject(project, filePath, error));
-  EXPECT_FALSE(error.isEmpty());
+  auto saveResult = service.saveProject(project, filePath);
+  ASSERT_FALSE(saveResult);
+  EXPECT_FALSE(saveResult.error().isEmpty());
 }
 
 TEST(ProjectServiceTest, CreateProjectRejectsInvalidMetadataName) {

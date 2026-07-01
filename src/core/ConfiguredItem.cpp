@@ -1,5 +1,7 @@
 #include "core/ConfiguredItem.hpp"
 
+#include <algorithm>
+
 ConfiguredItem::ConfiguredItem(const QString& name, ConfiguredItemType type)
     : name_(name), type_(type) {}
 
@@ -81,14 +83,12 @@ bool ConfiguredItem::removeChild(ConfiguredItem* childToRemove) {
     return false;
   }
 
-  for (auto it = children_.begin(); it != children_.end(); ++it) {
-    if (it->get() == childToRemove) {
-      children_.erase(it);
-      return true;
-    }
-  }
+  const auto oldSize = children_.size();
+  std::erase_if(children_, [childToRemove](const auto& child) {
+    return child.get() == childToRemove;
+  });
 
-  return false;
+  return children_.size() != oldSize;
 }
 
 std::vector<std::unique_ptr<ConfiguredItem>>& ConfiguredItem::children() {

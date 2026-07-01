@@ -1,5 +1,7 @@
 #include "core/validation/ValidationResult.hpp"
 
+#include <algorithm>
+
 void ValidationResult::addError(const QString& code, const QString& message, const QString& field) {
   messages_.append({ValidationSeverity::Error, code, message, field});
 }
@@ -14,21 +16,15 @@ bool ValidationResult::isValid() const {
 }
 
 bool ValidationResult::hasErrors() const {
-  for (const auto& message : messages_) {
-    if (message.severity == ValidationSeverity::Error) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::any_of(messages_, [](const ValidationMessage& message) {
+    return message.severity == ValidationSeverity::Error;
+  });
 }
 
 bool ValidationResult::hasWarnings() const {
-  for (const auto& message : messages_) {
-    if (message.severity == ValidationSeverity::Warning) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::any_of(messages_, [](const ValidationMessage& message) {
+    return message.severity == ValidationSeverity::Warning;
+  });
 }
 
 const QList<ValidationMessage>& ValidationResult::messages() const {

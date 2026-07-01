@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <expected>
 #include <memory>
 
 #include "core/ProjectMetadata.hpp"
@@ -88,17 +89,16 @@ class ProjectService {
    * @param error User-facing error populated on failure.
    * @return true when the project file was written.
    */
-  bool saveProject(ConfiguredProject& project, const QString& projectFilePath,
-                   QString& error) const;
+  std::expected<void, QString> saveProject(ConfiguredProject& project,
+                                           const QString& projectFilePath) const;
 
   /**
    * @brief Load a project from disk.
-   * @param projectFilePath Source .configured file path.
-   * @param error User-facing error populated on failure.
-   * @return Loaded project, or nullptr on failure.
+   * @param projectFilePath Source project file path.
+   * @return Loaded project, or a user-facing error when loading fails.
    */
-  std::unique_ptr<ConfiguredProject> loadProject(const QString& projectFilePath,
-                                                 QString& error) const;
+  std::expected<std::unique_ptr<ConfiguredProject>, QString> loadProject(
+      const QString& projectFilePath) const;
 
   /**
    * @brief Save a standalone copy of a project inside its own project folder.

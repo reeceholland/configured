@@ -3,9 +3,6 @@ project(Configured LANGUAGES CXX VERSION 0.5.0)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -99,6 +96,8 @@ add_executable(Configured
 
     resources/app.qrc
 )
+
+target_compile_features(Configured PRIVATE cxx_std_23)
 
 target_include_directories(Configured PRIVATE
     ${CMAKE_SOURCE_DIR}/include
