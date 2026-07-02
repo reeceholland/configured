@@ -7,6 +7,7 @@
 #include <QSet>
 
 #include "core/ConfiguredItem.hpp"
+#include "core/ConfiguredItemTypes.hpp"
 
 static bool collectParameterKeys(const ConfiguredItem* item, QSet<QString>& seen,
                                  QString* duplicate) {
@@ -267,14 +268,7 @@ std::unique_ptr<ConfiguredItem> ConfiguredProject::itemFromJson(const QJsonObjec
   const QString typeString = obj["type"].toString("Component");
   const QString description = obj["description"].toString();
 
-  ConfiguredItemType type = ConfiguredItemType::Component;
-  if (typeString == "System") {
-    type = ConfiguredItemType::System;
-  } else if (typeString == "Subsystem") {
-    type = ConfiguredItemType::Subsystem;
-  } else if (typeString == "Parameter") {
-    type = ConfiguredItemType::Parameter;
-  }
+  ConfiguredItemType type = configuredItemTypeFromString(typeString);
 
   auto item = std::make_unique<ConfiguredItem>(name, type);
   item->setDescription(description);

@@ -18,6 +18,7 @@
 #include <QVariant>
 
 #include "core/ConfiguredItem.hpp"
+#include "core/ConfiguredItemTypes.hpp"
 #include "core/ConfiguredProject.hpp"
 #include "core/validation/item/ItemValidator.hpp"
 
@@ -299,7 +300,7 @@ void EditorScreenWidget::loadSelectedItemIntoEditor() {
   }
 
   nameEdit_->setText(selectedItem_->name());
-  typeCombo_->setCurrentText(typeToString(selectedItem_->type()));
+  typeCombo_->setCurrentText(configuredItemTypeToString(selectedItem_->type()));
   descriptionEdit_->setPlainText(selectedItem_->description());
 
   const bool isParameter = selectedItem_->isParameter();
@@ -321,7 +322,7 @@ void EditorScreenWidget::applyEditorToSelectedItem() {
   }
 
   selectedItem_->setName(nameEdit_->text());
-  selectedItem_->setType(stringToType(typeCombo_->currentText()));
+  selectedItem_->setType(configuredItemTypeFromString(typeCombo_->currentText()));
   selectedItem_->setDescription(descriptionEdit_->toPlainText());
 
   if (selectedItem_->isParameter()) {
@@ -356,34 +357,6 @@ void EditorScreenWidget::setProjectName(const QString& name) {
   }
 
   project_->setName(name);
-}
-
-QString EditorScreenWidget::typeToString(ConfiguredItemType type) const {
-  switch (type) {
-    case ConfiguredItemType::System:
-      return "System";
-    case ConfiguredItemType::Subsystem:
-      return "Subsystem";
-    case ConfiguredItemType::Component:
-      return "Component";
-    case ConfiguredItemType::Parameter:
-      return "Parameter";
-    default:
-      return "Component";
-  }
-}
-
-ConfiguredItemType EditorScreenWidget::stringToType(const QString& text) const {
-  if (text == "System") {
-    return ConfiguredItemType::System;
-  }
-  if (text == "Subsystem") {
-    return ConfiguredItemType::Subsystem;
-  }
-  if (text == "Parameter") {
-    return ConfiguredItemType::Parameter;
-  }
-  return ConfiguredItemType::Component;
 }
 
 ConfiguredProject* EditorScreenWidget::project() {
