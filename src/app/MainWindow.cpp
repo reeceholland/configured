@@ -725,10 +725,10 @@ void MainWindow::editProjectMetadata() {
 
   const ProjectMetadata updated = dialog.metadata();
 
-  QString error;
-  if (!projectService_.updateProjectMetadata(*currentProject_, updated,
-                                             currentProjectFilePath_.trimmed(), error)) {
-    QMessageBox::warning(this, "Metadata Update Failed", error);
+  auto updateResult = projectService_.updateProjectMetadata(*currentProject_, updated,
+                                                            currentProjectFilePath_.trimmed());
+  if (!updateResult) {
+    QMessageBox::warning(this, "Metadata Update Failed", updateResult.error());
     return;
   }
 

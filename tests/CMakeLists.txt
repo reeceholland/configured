@@ -59,6 +59,9 @@ add_executable(ConfiguredTests
 
     ../src/app/StatusBarController.cpp
     ../include/app/StatusBarController.hpp
+
+    ../src/core/ConfiguredItemTypes.cpp
+    ../include/core/ConfiguredItemTypes.hpp
 )
 
 target_compile_features(ConfiguredTests PRIVATE cxx_std_23)

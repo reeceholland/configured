@@ -57,7 +57,9 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   }
 
   if (metadata.gitManaged) {
-    if (!ensureGitInitialized(projectFolderPath, result.errorMessage)) {
+    if (auto success = ensureGitInitialized(projectFolderPath); !success) {
+      result.errorMessage =
+          success.error().isEmpty() ? "Failed to initialize Git repository." : success.error();
       return result;
     }
   }
@@ -68,15 +70,14 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   return result;
 }
 
-bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
-                                           const ProjectMetadata& metadata,
-                                           const QString& projectFilePath, QString& error) const {
+std::expected<void, QString> ProjectService::updateProjectMetadata(
+    ConfiguredProject& project, const ProjectMetadata& metadata,
+    const QString& projectFilePath) const {
   ProjectMetadataValidator validator;
   const ValidationResult validationResult = validator.validate(metadata);
 
   if (!validationResult.isValid()) {
-    error = validationResult.messages().first().message;
-    return false;
+    return std::unexpected(validationResult.messages().first().message);
   }
 
   const bool wasGitManaged = project.isGitManaged();
@@ -86,33 +87,31 @@ bool ProjectService::updateProjectMetadata(ConfiguredProject& project,
   const QString repoDir = QFileInfo(projectFilePath).absolutePath();
 
   if (!wasGitManaged && metadata.gitManaged) {
-    if (!ensureGitInitialized(repoDir, error)) {
-      return false;
+    if (auto success = ensureGitInitialized(repoDir); !success) {
+      return std::unexpected(success.error().isEmpty() ? "Failed to initialize Git repository."
+                                                       : success.error());
     }
   }
 
-  return true;
+  return {};
 }
 
-bool ProjectService::ensureGitInitialized(const QString& repoDir, QString& error) const {
+std::expected<void, QString> ProjectService::ensureGitInitialized(const QString& repoDir) const {
   if (!gitService_) {
-    error = "Git service not available.";
-    return false;
+    return std::unexpected("Git service not available.");
   }
 
   QString output;
 
   if (!gitService_->isGitAvailable(&output)) {
-    error = "Git is not available: " + output;
-    return false;
+    return std::unexpected("Git is not available: " + output);
   }
 
   if (!gitService_->initRepository(repoDir, &output)) {
-    error = "Failed to initialize Git repository: " + output;
-    return false;
+    return std::unexpected("Failed to initialize Git repository: " + output);
   }
 
-  return true;
+  return {};
 }
 
 std::expected<void, QString> ProjectService::saveProject(ConfiguredProject& project,

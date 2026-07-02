@@ -71,8 +71,9 @@ class ProjectService {
    * @param error User-facing error populated on failure.
    * @return true when metadata was applied and saved.
    */
-  bool updateProjectMetadata(ConfiguredProject& project, const ProjectMetadata& metadata,
-                             const QString& projectFilePath, QString& error) const;
+  std::expected<void, QString> updateProjectMetadata(ConfiguredProject& project,
+                                                     const ProjectMetadata& metadata,
+                                                     const QString& projectFilePath) const;
 
   /**
    * @brief Ensure a directory is initialized as a Git repository.
@@ -80,7 +81,7 @@ class ProjectService {
    * @param error User-facing error populated on failure.
    * @return true when the directory is already a repository or was initialized.
    */
-  bool ensureGitInitialized(const QString& repoDir, QString& error) const;
+  std::expected<void, QString> ensureGitInitialized(const QString& repoDir) const;
 
   /**
    * @brief Save an existing project to disk.
