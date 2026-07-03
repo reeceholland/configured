@@ -57,9 +57,9 @@ ProjectCreationResult ProjectService::createProject(const ProjectMetadata& metad
   }
 
   if (metadata.gitManaged) {
-    if (auto success = ensureGitInitialized(projectFolderPath); !success) {
+    if (auto gitResult = ensureGitInitialized(projectFolderPath); !gitResult) {
       result.errorMessage =
-          success.error().isEmpty() ? "Failed to initialize Git repository." : success.error();
+          gitResult.error().isEmpty() ? "Failed to initialize Git repository." : gitResult.error();
       return result;
     }
   }
@@ -87,9 +87,9 @@ std::expected<void, QString> ProjectService::updateProjectMetadata(
   const QString repoDir = QFileInfo(projectFilePath).absolutePath();
 
   if (!wasGitManaged && metadata.gitManaged) {
-    if (auto success = ensureGitInitialized(repoDir); !success) {
-      return std::unexpected(success.error().isEmpty() ? "Failed to initialize Git repository."
-                                                       : success.error());
+    if (auto gitResult = ensureGitInitialized(repoDir); !gitResult) {
+      return std::unexpected(gitResult.error().isEmpty() ? "Failed to initialize Git repository."
+                                                         : gitResult.error());
     }
   }
 
@@ -104,11 +104,11 @@ std::expected<void, QString> ProjectService::ensureGitInitialized(const QString&
   QString output;
 
   if (!gitService_->isGitAvailable(&output)) {
-    return std::unexpected("Git is not available: " + output);
+    return std::unexpected(QStringLiteral("Git is not available: ") + output);
   }
 
   if (!gitService_->initRepository(repoDir, &output)) {
-    return std::unexpected("Failed to initialize Git repository: " + output);
+    return std::unexpected(QStringLiteral("Failed to initialize Git repository: ") + output);
   }
 
   return {};
@@ -132,7 +132,8 @@ std::expected<void, QString> ProjectService::saveProject(ConfiguredProject& proj
 
   QString error;
   if (!project.saveToFile(projectFilePath, &error)) {
-    return std::unexpected(error.isEmpty() ? "Could not save project file." : error);
+    return std::unexpected(error.isEmpty() ? QStringLiteral("Could not save project file.")
+                                           : error);
   }
 
   return {};

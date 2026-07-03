@@ -25,6 +25,7 @@ add_executable(ConfiguredTests
     test_status_bar_controller.cpp
 
     ../src/core/ConfiguredItem.cpp
+    ../src/core/ConfiguredItemTypes.cpp
     ../src/core/ConfiguredProject.cpp
     ../src/core/ProjectService.cpp
     ../src/core/ProjectMetadataService.cpp

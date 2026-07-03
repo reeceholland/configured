@@ -121,6 +121,52 @@ TEST(ProjectServiceTest, SaveProjectRejectsDuplicateParameterKeys) {
   EXPECT_FALSE(saveResult.error().isEmpty());
 }
 
+TEST(ProjectServiceTest, UpdateProjectMetadataRejectsInvalidName) {
+  ConfiguredProject project;
+  project.createSampleProject();
+
+  ProjectMetadata metadata;
+  metadata.name = "bad/name";
+
+  ProjectService service(nullptr);
+
+  const auto updateResult = service.updateProjectMetadata(project, metadata, "project.configured");
+
+  EXPECT_FALSE(updateResult);
+  EXPECT_FALSE(updateResult.error().isEmpty());
+}
+
+TEST(ProjectServiceTest, UpdateProjectMetadataReturnsGitErrorWhenGitServiceIsMissing) {
+  QTemporaryDir dir;
+  ASSERT_TRUE(dir.isValid());
+
+  const QString filePath = dir.filePath("project.configured");
+
+  ConfiguredProject project;
+  project.createSampleProject();
+  project.setGitManaged(false);
+
+  ProjectMetadata metadata;
+  metadata.name = "GitManagedProject";
+  metadata.gitManaged = true;
+
+  ProjectService service(nullptr);
+
+  const auto updateResult = service.updateProjectMetadata(project, metadata, filePath);
+
+  EXPECT_FALSE(updateResult);
+  EXPECT_FALSE(updateResult.error().isEmpty());
+}
+
+TEST(ProjectServiceTest, EnsureGitInitializedReturnsErrorWhenGitServiceIsMissing) {
+  ProjectService service(nullptr);
+
+  const auto gitResult = service.ensureGitInitialized("repo");
+
+  EXPECT_FALSE(gitResult);
+  EXPECT_FALSE(gitResult.error().isEmpty());
+}
+
 TEST(ProjectServiceTest, CreateProjectRejectsInvalidMetadataName) {
   QTemporaryDir dir;
   ASSERT_TRUE(dir.isValid());
